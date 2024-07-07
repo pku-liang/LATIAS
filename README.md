@@ -8,4 +8,6 @@ cd -
 
 scons -j16 --d --static
 
+./build/TileExp
+
 Vscode debug json file -- launch.json

@@ -1,0 +1,31 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "TileExp debug",
+            "type": "cppdbg",   
+            "request": "launch",
+            "program": "/home/Ray/HPCA25/TileExp/build/TileExp",
+            // "args": ["arch/arch-spatial.yaml", "prob/*", "map/*"],
+            "args": ["/home/Ray/HPCA25/TileExp/tests/00-test-graph/*.yaml"],
+            "stopAtEntry": false,
+            // "cwd": "/home/Ray/Domino/3rdparty/TileFlow/tests/cases/01-test-linear",
+            // "cwd": "/home/Ray/Domino/3rdparty/TileFlow/tests/cases/08-test-2mm",
+            "cwd": "/home/Ray/HPCA25/TileExp/tests/00-test-graph/",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+              {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+              }
+            ],
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+    ]
+}

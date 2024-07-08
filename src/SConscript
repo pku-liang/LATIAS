@@ -108,6 +108,7 @@ if "NTLPATH" in os.environ:
 # """)
 
 lib_sources = Split(""" 
+./problem/parser.cpp
 ./model/graph.cpp
 ./common.cpp
 """)

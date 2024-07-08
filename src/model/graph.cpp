@@ -1,29 +1,32 @@
 #include "./TileExp/model/graph.hpp"
 #include "./model/topology.hpp"
-#include "common.hpp"
+#include "./TileExp/common.hpp"
 
 namespace model{
 
 namespace TileExp{
 
 // ******* GraphNode ******** //
-// construct
-GraphNode::GraphNode(std::string Name, std::shared_ptr<model::Level> Node, 
+// construct memory
+GraphNode::GraphNode(std::string Name, std::string className, std::shared_ptr<model::Level> Node, 
                                     std::shared_ptr<LegacyNetwork> NetNode){
     name = Name;
     node = Node;
+    class_name = className;
     net_node = NetNode;
-    if (model::isComputeClass(name)) type = "ArithmeticUnits";
-    else if (model::isBufferClass(name)) type = "BufferLevel";
+    if (model::isComputeClass(className)) type = "ArithmeticUnits";
+    else if (model::isBufferClass(className)) type = "BufferLevel";
     else assert(false);
 }
 
-GraphNode::GraphNode(std::string Name, std::shared_ptr<model::Level> Node){
+// arith
+GraphNode::GraphNode(std::string Name, std::string className, std::shared_ptr<model::Level> Node){
     name = Name;
     node = Node;
+    class_name = className;
     net_node = nullptr;
-    if (model::isComputeClass(name)) type = "ArithmeticUnits";
-    else if (model::isBufferClass(name)) type = "BufferLevel";
+    if (model::isComputeClass(className)) type = "ArithmeticUnits";
+    else if (model::isBufferClass(className)) type = "BufferLevel";
     else assert(false);
 }
 
@@ -64,14 +67,14 @@ Graph::Graph(model::Engine::Specs& InputSpecs){
 // construct graph (adjacent list) by model::Topology::Specs
 void Graph::BuildGraph(model::Topology::Specs& TpSpecs, unsigned LevelNum){
 // void Graph::BuildGraph(model::Topology::Specs& TpSpecs, std::string Root, unsigned LevelNum){
-    for(unsigned i = LevelNum - 1; i > 0; i--){
+    for(int i = LevelNum - 1; i > -1; i--){
 
         // need to be casted to different class
         auto tmp_specs = TpSpecs.GetLevel(i);
         auto className = tmp_specs->className;
         auto name = tmp_specs->level_name;
 
-        std::cout << "name: " << name << std::endl;
+        std::cout << "Node Name: " << name << std::endl;
 
         if (tmp_specs->Type() == "ArithmeticUnits"){ // without inferred network
         // if (model::isComputeClass(className)){ // without inferred network
@@ -81,7 +84,7 @@ void Graph::BuildGraph(model::Topology::Specs& TpSpecs, unsigned LevelNum){
             std::shared_ptr<model::Level> level = std::static_pointer_cast<model::Level>(arithmetic_level);
 
             // add edge
-            assert(AddEdge(name, level));
+            assert(AddEdge(name, className, level));
         }
         else if (tmp_specs->Type() == "BufferLevel"){ // with inferred network
         // else if (model::isBufferClass(className)){ // with inferred network
@@ -90,19 +93,11 @@ void Graph::BuildGraph(model::Topology::Specs& TpSpecs, unsigned LevelNum){
             std::shared_ptr<BufferLevel> buffer_level = std::make_shared<BufferLevel>(current_specs);
             std::shared_ptr<model::Level> level = std::static_pointer_cast<Level>(buffer_level);
 
-            std::cout << "88 " << std::endl;
-            // model::BufferLevel buffer_level_tmp(current_specs);
-            std::cout << "90 " << std::endl;
-            
-            std::cout << "buffer level name: " << name << std::endl;
-
             // legacy network
             std::shared_ptr<LegacyNetwork> legacy_net = FindLegacyNetwork(TpSpecs, name);
 
-            std::cout << "legacy net name: " << name << std::endl;
-
             // add edge
-            assert(AddEdge(name, level, legacy_net));
+            assert(AddEdge(name, className, level, legacy_net));
         }
         else{
             TILEEXP_ERROR("Not supported node type" + name);
@@ -114,7 +109,9 @@ void Graph::BuildGraph(model::Topology::Specs& TpSpecs, unsigned LevelNum){
 std::shared_ptr<LegacyNetwork> Graph::FindLegacyNetwork(model::Topology::Specs& TpSpecs, std::string Name){
     for (unsigned i = 0; i < TpSpecs.NumStorageLevels(); i++){
         auto legacy_net = *TpSpecs.GetInferredNetwork(i);
-        if (legacy_net.name == Name){
+        if (legacy_net.name.find(Name) != std::string::npos){
+            // std::cout << "legacy net name: " << legacy_net.name << std::endl;
+            // std::cout << "Name: " << Name << std::endl;         
             std::shared_ptr<LegacyNetwork> legacy_network = std::make_shared<LegacyNetwork>(legacy_net);
             return legacy_network;
         }
@@ -123,6 +120,7 @@ std::shared_ptr<LegacyNetwork> Graph::FindLegacyNetwork(model::Topology::Specs& 
 }
 
 // template<typename T>
+// init 
 void Graph::AddVertex(std::string Name){
     if (GraphList.find(Name) == GraphList.end()){
         GraphList[Name] = std::vector<std::string>();
@@ -186,15 +184,15 @@ std::vector<std::string> Graph::FindDestNode(std::shared_ptr<GraphNode> PtrGraph
     if (PtrGraphNode->GetType() == "ArithmeticUnits"){
         std::shared_ptr<model::ArithmeticUnits> current_units = std::static_pointer_cast<model::ArithmeticUnits>(PtrGraphNode->GetNode());
         auto current_specs = current_units->GetSpecs();
-        // std::string successor = current_specs.successor.Get();
-        // result = parseName2Vec(successor);
+        std::string successor = current_specs.successor.Get();
+        result = parseName2Vec(successor);
         // result = current_specs.successor.Get();
     }
     else if (PtrGraphNode->GetType() == "BufferLevel"){
         std::shared_ptr<model::BufferLevel> current_units = std::static_pointer_cast<model::BufferLevel>(PtrGraphNode->GetNode());
         auto current_specs = current_units->GetSpecs();
-        // std::string successor = current_specs.successor.Get();
-        // result = parseName2Vec(successor);
+        std::string successor = current_specs.successor.Get();
+        result = parseName2Vec(successor);
         // result = current_specs.successor.Get();
     }
     else assert(false);
@@ -202,10 +200,10 @@ std::vector<std::string> Graph::FindDestNode(std::shared_ptr<GraphNode> PtrGraph
 }
 
 // for memory units
-bool Graph::AddEdge(std::string Name, std::shared_ptr<model::Level> LevelNode, std::shared_ptr<LegacyNetwork> NetNode){
+bool Graph::AddEdge(std::string Name, std::string className, std::shared_ptr<model::Level> LevelNode, std::shared_ptr<LegacyNetwork> NetNode){
     // build Node
     // std::shared_ptr<GraphNode> ptr_graph_node = std::make_shared<GraphNode>(GraphNode(Name, LevelNode, NetNode)); // add more, 需要展示出Name和type的关系
-    std::shared_ptr<GraphNode> ptr_graph_node(new GraphNode(Name, LevelNode, NetNode)); // add more, 需要展示出Name和type的关系
+    std::shared_ptr<GraphNode> ptr_graph_node(new GraphNode(Name, className, LevelNode, NetNode)); // add more, 需要展示出Name和type的关系
     std::vector<std::string> dest_node = FindDestNode(ptr_graph_node); // add more
 
     // add edge
@@ -221,10 +219,10 @@ bool Graph::AddEdge(std::string Name, std::shared_ptr<model::Level> LevelNode, s
 }
 
 // for compute units
-bool Graph::AddEdge(std::string Name, std::shared_ptr<model::Level> LevelNode){
+bool Graph::AddEdge(std::string Name, std::string className, std::shared_ptr<model::Level> LevelNode){
     // build Node
     // std::shared_ptr<GraphNode> ptr_graph_node = std::make_shared<GraphNode>(GraphNode(Name, LevelNode, NetNode)); // add more, 需要展示出Name和type的关系
-    std::shared_ptr<GraphNode> ptr_graph_node(new GraphNode(Name, LevelNode)); // add more -- finish, 需要展示出Name和type的关系
+    std::shared_ptr<GraphNode> ptr_graph_node(new GraphNode(Name, className, LevelNode)); // add more -- finish, 需要展示出Name和type的关系
     std::vector<std::string> dest_node = FindDestNode(ptr_graph_node); // add more -- finish
 
     // add edge

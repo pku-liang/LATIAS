@@ -14,6 +14,7 @@ namespace TileExp{
 class GraphNode{
     private: 
         std::string name;
+        std::string class_name;
         std::shared_ptr<model::Level> node;
         // std::shared_ptr<LevelSpecs> Node;
         std::shared_ptr<LegacyNetwork> net_node; // inferred network config
@@ -23,8 +24,8 @@ class GraphNode{
         // construct
         GraphNode(); // default constructor
         // GraphNode(model::Engine::Specs InputSpecs);
-        GraphNode(std::string Name, std::shared_ptr<model::Level> Node);
-        GraphNode(std::string Name, std::shared_ptr<model::Level> Node, 
+        GraphNode(std::string Name, std::string className, std::shared_ptr<model::Level> Node);
+        GraphNode(std::string Name, std::string className, std::shared_ptr<model::Level> Node, 
                                     std::shared_ptr<LegacyNetwork> NetNode);
         
         
@@ -71,20 +72,21 @@ class Graph{
         // functional function
         std::shared_ptr<LegacyNetwork> FindLegacyNetwork(model::Topology::Specs& TpSpecs, std::string Name);
         void AddVertex(std::string Name);
-        bool AddEdge(std::string Name, std::shared_ptr<model::Level> LevelNode, std::shared_ptr<LegacyNetwork> NetNode); // add edge for each memory level
-        bool AddEdge(std::string Name, std::shared_ptr<model::Level> LevelNode);
+        bool AddEdge(std::string Name, std::string className, std::shared_ptr<model::Level> LevelNode, std::shared_ptr<LegacyNetwork> NetNode); // add edge for each memory level
+        bool AddEdge(std::string Name, std::string className, std::shared_ptr<model::Level> LevelNode);
         void Print();
 
         // find values
         unsigned GetNodeCount();
         
+        // look up values by name
         model::BufferLevel::Specs& LookupBufferSpecs(std::string Name);
         model::LegacyNetwork::Specs& LookupNetSpecs(std::string Name);
         model::ArithmeticUnits::Specs& LookupArithSpecs(std::string Name);
-        // int LookupValue(std::string Name, std::string ValueName, int Value);
-        // unsigned LookupValue(std::string Name, std::string ValueName, unsigned Value);
-        
         model::LegacyNetwork::Stats& LookupNetStats(std::string Name);
+        
+        // unsigned LookupValue(std::string Name, std::string ValueName, unsigned Value);
+        // int LookupValue(std::string Name, std::string ValueName, int Value);
         // std::string Graph::LookupNetValue(std::string Name, std::string ValueName, std::string Value);
         
         std::vector<std::string> FindDestNode(std::shared_ptr<GraphNode> PtrGraphNode);

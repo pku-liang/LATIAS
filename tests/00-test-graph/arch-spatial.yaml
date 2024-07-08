@@ -25,7 +25,7 @@ architecture:
         word-bits: 8
         read_bandwidth: 2
         write_bandwidth: 2
-        successor: [mac, MainMemory]
+        successor: mac, MainMemory
         alignments: 0
         loadWidth: 128
         layout: ND

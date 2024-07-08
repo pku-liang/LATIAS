@@ -1,12 +1,22 @@
 problem:
-  shape:
-    name: GEMM
-    dimensions: [M,N,K] 
+  io:
+    ins: A, B, D
+    outs: E
+  dimensions: [M,N,K,L]
+  instance:
+    M: 512
+    N: 64
+    K: 64
+    L: 512
+
+  ops:
+  - name: GEMM1
+    dimensions: [M,L,K]
     data-spaces:
-    - name: C 
+    - name: C
       projection:
-        - [[M]] 
-        - [[N]] 
+        - [[M]]
+        - [[L]]
       read-write: True 
     - name: A 
       projection:
@@ -15,13 +25,41 @@ problem:
     - name: B
       projection:
         - [[K]]
+        - [[L]]
+    ins: A, B
+    out: C
+   
+  - name: EXP 
+    dimensions: [M,L]
+    type: exp 
+    data-spaces:
+    - name: C
+      projection:
+        - [[M]]
+        - [[L]]
+    - name: exp 
+      projection: 
+        - [[M]]
+        - [[L]]
+    ins: C
+    out: exp
+    inplace: True
+    
+  - name: GEMM2 
+    dimensions: [M,L,N]
+    data-spaces:
+    - name: E 
+      projection: 
+        - [[M]]
         - [[N]]
-  instance:
-    M: 512
-    N: 512
-    K: 512
-
-model: 
-  verbose: true
-  auto_bypass_on_failure: false
-  out_prefix: gemm-
+      read-write: True 
+    - name: exp
+      projection: 
+        - [[M]]
+        - [[L]]
+    - name: D 
+      projection: 
+        - [[L]]
+        - [[N]]
+    ins: exp, D
+    out: E 

@@ -10,8 +10,9 @@
 #include "util/args.hpp"
 
 #include "./TileExp/model/graph.hpp"
+#include "./TileExp/common.hpp"
+#include "./TileExp/problem/problem.hpp"
 
-#include "common.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -39,21 +40,22 @@ int main(int argc, char* argv[])
 
   config::CompoundConfigNode arch;
 
-  if (root.exists("arch"))
-  {
+  if (root.exists("arch")){
     arch = root.lookup("arch");
   }
-  else if (root.exists("architecture"))
-  {
+  else if (root.exists("architecture")){
     arch = root.lookup("architecture");
   }
-  
+
+  auto problem = root.lookup("problem");
+  problem::TileExp::Workloads workloads_instance;
+
   bool is_sparse_topology = root.exists("sparse_optimizations"); // we don't consider this
 
   // node information hide in model::Engine::Specs::topology
   model::Engine::Specs arch_specs_ = model::Engine::ParseSpecs(arch, is_sparse_topology); // only for sepc.topology
 
-  if (root.exists("ERT"))
+  if (root.exists("ERT")) // we don't consider this
   {
     std::cout << "Found Accelergy ERT (energy reference table), replacing internal energy model." << std::endl;
     auto ert = root.lookup("ERT"); 
@@ -64,44 +66,31 @@ int main(int argc, char* argv[])
     } 
   }
 
-  auto topology = arch_specs_.topology;
-  auto level_spec = topology.GetLevel(2); // 有没有可能是这里的没加进去?
-  std::cout << "get success" << std::endl;
-
-  model::BufferLevel::Specs& current_specs = *std::static_pointer_cast<model::BufferLevel::Specs>(level_spec);
-  // std::cout << current_specs.className << current_specs.layout << std::endl;
-
+  // // ***** test ***** //
+  // auto topology = arch_specs_.topology;
+  // auto level_spec = topology.GetLevel(2);
+  // std::cout << "get success" << std::endl;
+  // model::BufferLevel::Specs& current_specs = *std::static_pointer_cast<model::BufferLevel::Specs>(level_spec);
+  // // std::cout << current_specs.className << current_specs.layout << std::endl;
   // for(auto& tmp: current_specs.successor.Get()){
   //   std::cout << tmp << std::endl;
   // }
+  // std::cout << "cast success" << std::endl;
+  // // copy cosntruct error -- new element?
+  // std::shared_ptr<model::BufferLevel> buffer_level = std::make_shared<model::BufferLevel>(current_specs); 
+  // std::cout << "ptr success" << std::endl;
+  // // ***** end test ***** //
 
-  std::cout << "cast success" << std::endl;
-  // copy cosntruct error -- new element?
-  std::shared_ptr<model::BufferLevel> buffer_level = std::make_shared<model::BufferLevel>(current_specs); 
-  std::cout << "ptr success" << std::endl;
-
+  // build architecture graph  
   model::TileExp::Graph graph(arch_specs_);
-  
-  std::string level_name = "MainMemory";
-  unsigned arith_count = arch_specs_.topology.ArithmeticMap();
-  std::cout << arith_count << std::endl;
-  
-  auto mem_level = arch_specs_.topology.Name2IdxMap(level_name);
-  std::cout << mem_level << std::endl;
+  if(TileExp::verbose_level) graph.Print();
 
-  if(mem_level < arith_count){
-    auto level_specs_ = std::static_pointer_cast<model::ArithmeticUnits::Specs>(arch_specs_.topology.GetLevel(mem_level));
-    std::cout << level_specs_->className << std::endl;
-  }
-  else{
-    auto level_specs_ = std::static_pointer_cast<model::BufferLevel::Specs>(arch_specs_.topology.GetLevel(mem_level));
-    std::cout << level_specs_->className << std::endl;
-  }
+  std::cout << "Begin ParseWorkload..." << std::endl;
+  problem::TileExp::ParseWorkloads(problem, workloads_instance); // analysis prob yaml
+  problem::Workload::SetCurrShape(&workloads_instance.get_shape()); // set problem namespace --> current_shape_
 
-  
-  auto problem = root.lookup("problem");
-//   problem::TileFlow::Workloads workloads; // 描述IO，一些具体的config，以及具体的workload bound
-  
+  if (TileExp::verbose_level)  
+    workloads_instance.Print();
+
   return 0;
-
 }

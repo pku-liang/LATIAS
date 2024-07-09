@@ -43,7 +43,7 @@ class Shape
   typedef unsigned FactorizedDimensionID;
   
   unsigned NumFactorizedDimensions = 0;
-  std::map<FactorizedDimensionID, std::string> FactorizedDimensionIDToName;
+  std::map<FactorizedDimensionID, std::string> FactorizedDimensionIDToName; // dimensions: [M,L,K] --> {[0, M], [1, L], [2, K]}
   std::map<std::string, FactorizedDimensionID> FactorizedDimensionNameToID;
 
   typedef unsigned FlattenedDimensionID;

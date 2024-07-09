@@ -12,7 +12,6 @@ architecture:
         word-bits: 8
         successor: RegFile
         alignments: 0
-        loadWidth: 128
         layout: ND
 
     - name: RegFile[0..15] 
@@ -25,9 +24,8 @@ architecture:
         word-bits: 8
         read_bandwidth: 2
         write_bandwidth: 2
-        successor: mac, MainMemory
+        successor: mac, MainMemory, mac2
         alignments: 0
-        loadWidth: 128
         layout: ND
 
     - name: mac[0..15] 
@@ -36,8 +34,8 @@ architecture:
         word-bits: 16 
         meshX: 4
         meshY: 4
+        compute_cycles: 2
         successor: RegFile
-        loadWidth: 128
         layout: ND
     
     - name: mac2[0..15] 
@@ -46,6 +44,6 @@ architecture:
         word-bits: 16 
         meshX: 4
         meshY: 4
+        compute_cycles: 2
         successor: RegFile
-        loadWidth: 128
         layout: ND

@@ -56,7 +56,7 @@ Graph::Graph(model::Engine::Specs& InputSpecs){
     auto& topology = specs.topology;
     root = topology.GetLevel(level_num-1)->level_name; // name-->root
     node_num = level_num;
-    arith_num = topology.ArithmeticMap();
+    arith_num = topology.ArithmeticMap() + 1;
 
     std::cout << "start build graph" << std::endl;
     BuildGraph(topology, level_num);

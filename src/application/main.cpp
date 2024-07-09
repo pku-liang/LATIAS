@@ -13,6 +13,29 @@
 #include "./TileExp/common.hpp"
 #include "./TileExp/problem/problem.hpp"
 
+void show_energy(
+  const model::Engine::Specs& EngineSpecs,
+  std::ostream& o = std::cout) {
+
+  auto specs_ = EngineSpecs.topology;
+  o << "==========AccessEnergy===========" << std::endl;
+  // o << "metric, energy" << std::endl;
+  for (unsigned i = 0; i < specs_.NumLevels(); i++) {
+    auto level = specs_.GetLevel(i);
+    if (level->Type() == "ArithmeticUnits"){
+      auto level_specs = std::static_pointer_cast<model::ArithmeticUnits::Specs>(level);
+      o << "Arith::" << level->level_name << "::energy_per_op," 
+        << level_specs->op_energy_map.at("random_compute") << std::endl;
+    }
+    else if (level->Type() == "BufferLevel"){
+      auto level_specs = std::static_pointer_cast<model::BufferLevel::Specs>(level);
+      o << "Buffer::" << level_specs->level_name << "::energy_per_op::read," << level_specs->op_energy_map.at("random_read") << std::endl;
+      o << "Buffer::" << level_specs->level_name << "::energy_per_op::update," << level_specs->op_energy_map.at("random_update") << std::endl;
+      o << "Buffer::" << level_specs->level_name << "::energy_per_op::fill," << level_specs->op_energy_map.at("random_fill") << std::endl;
+    }
+  }
+  o << "========End AccessEnergy=========" << std::endl;
+}
 
 int main(int argc, char* argv[])
 {
@@ -66,6 +89,19 @@ int main(int argc, char* argv[])
     } 
   }
 
+  // print buffer words
+  for (unsigned storage_level_id = 0; storage_level_id < arch_specs_.topology.NumLevels();
+      storage_level_id ++){
+    if (storage_level_id < arch_specs_.topology.ArithmeticMap() + 1) continue;
+    auto bufferlevel = arch_specs_.topology.GetLevel(storage_level_id);
+    auto bufferspecs = std::static_pointer_cast<model::BufferLevel::Specs>(bufferlevel);
+    TILEEXP_COND_WARNING(bufferspecs->size.IsSpecified(), "No memory size specified at " << bufferspecs->name.Get());
+    if (TileExp::verbose_level) {
+      std::cout << bufferspecs->name.Get() << ": ";
+      std::cout << bufferspecs->size.Get() << " words" << std::endl;
+    }
+  }  
+
   // // ***** test ***** //
   // auto topology = arch_specs_.topology;
   // auto level_spec = topology.GetLevel(2);
@@ -85,12 +121,23 @@ int main(int argc, char* argv[])
   model::TileExp::Graph graph(arch_specs_);
   if(TileExp::verbose_level) graph.Print();
 
+  // parse workload -- tileflow mode
   std::cout << "Begin ParseWorkload..." << std::endl;
   problem::TileExp::ParseWorkloads(problem, workloads_instance); // analysis prob yaml
   problem::Workload::SetCurrShape(&workloads_instance.get_shape()); // set problem namespace --> current_shape_
 
   if (TileExp::verbose_level)  
     workloads_instance.Print();
+
+  if (TileExp::verbose_level)
+    show_energy(arch_specs_, std::cout);
+  
+  // note that we do not consider the network specs 
+
+  // parse mapping
+  // auto mapping = 
+  //   mapping::TileFlow::ParseAndConstruct(root.lookup("mapping"), arch_specs_, workloads); // parse mapping
+  
 
   return 0;
 }

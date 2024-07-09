@@ -68,6 +68,7 @@ class ArithmeticUnits : public Level
     Attribute<int> alignments;
     Attribute<std::string> layout;
     Attribute<std::string> successor;
+    Attribute<int> compute_cycles;
 
     // Serialization
     friend class boost::serialization::access;

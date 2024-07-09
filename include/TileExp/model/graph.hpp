@@ -47,7 +47,7 @@ class GraphNode{
 
 
 // receive model::Topology::Specs as input to build topology graph
-class Graph{
+class Graph: public model::Topology {
     private: 
         // int val;
         std::string root;
@@ -57,7 +57,7 @@ class Graph{
         // std::unordered_map<std::string, std::vector<std::shared_ptr<model::Level>>> levels; // adjacent list for -- string-name and LevelSpecs--NodeConfig
         // std::unordered_map<std::string, std::vector<std::shared_ptr<LegacyNetwork::Specs>>> NetGraphList; // adjacent list for -- string-name and LevelSpecs--NodeConfig
         unsigned node_num;
-        unsigned arith_num;
+        unsigned arith_num; 
 
     public:
 

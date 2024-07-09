@@ -205,7 +205,6 @@ bool Workloads::add_workload(const std::string & name, std::shared_ptr<Workload>
     return false;
   }
 
-
   auto shape_ = workload->GetShape();
   for (auto& kv: shape_->FlattenedDimensionNameToID) {
     TILEEXP_ASSERT(common_shape_.FlattenedDimensionNameToID.count(kv.first), 
@@ -230,7 +229,7 @@ bool Workloads::add_workload(const std::string & name, std::shared_ptr<Workload>
       auto & new_expr = new_proj.back();
       for (auto& term: expr) {
         Shape::CoefficientID new_coeff_id = term.first == shape_->NumCoefficients? -1:
-        common_shape_.CoefficientNameToID[shape_->CoefficientIDToName.at(term.first)];
+          common_shape_.CoefficientNameToID[shape_->CoefficientIDToName.at(term.first)];
         Shape::FactorizedDimensionID new_factorized_dim = 
           common_shape_.FactorizedDimensionNameToID[shape_->FactorizedDimensionIDToName.at(term.second)];
         new_expr.emplace_back(new_coeff_id, new_factorized_dim);
@@ -328,8 +327,8 @@ void Workloads::set_dims(const std::vector<std::string>& dims) {
   for (auto& dim: dims) {
     common_shape_.FactorizedDimensionNameToID[dim] = common_shape_.NumFactorizedDimensions;
     common_shape_.FactorizedDimensionIDToName[common_shape_.NumFactorizedDimensions] = dim;
-    common_shape_.FlattenedDimensionIDToName[common_shape_.NumFlattenedDimensions] = dim;
     common_shape_.FlattenedDimensionNameToID[dim] = common_shape_.NumFlattenedDimensions;
+    common_shape_.FlattenedDimensionIDToName[common_shape_.NumFlattenedDimensions] = dim;
     common_shape_.FlattenedToFactorized.push_back({common_shape_.NumFactorizedDimensions});
     common_shape_.FactorizedToFlattened[common_shape_.NumFlattenedDimensions] = common_shape_.NumFactorizedDimensions;
     common_shape_.FactorizedToFlattened[common_shape_.NumFactorizedDimensions] = common_shape_.NumFlattenedDimensions;

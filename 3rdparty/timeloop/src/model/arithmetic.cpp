@@ -117,6 +117,12 @@ ArithmeticUnits::Specs ArithmeticUnits::ParseSpecs(config::CompoundConfigNode se
     specs.alignments = alignments;
   }
 
+  int compute_cycles;
+  if (setting.lookupValue("compute_cycles", compute_cycles))
+  {
+    specs.compute_cycles = compute_cycles;
+  }
+
   // Sparse Architecture's Module 
   specs.is_sparse_module = is_sparse_module;
   

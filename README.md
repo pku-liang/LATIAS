@@ -12,4 +12,6 @@ scons -j16 --d --static
 ## Run
 bash test.sh
 
+## Vscode C++ debug mode
+
 Vscode debug json file -- launch.json

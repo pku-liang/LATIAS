@@ -25,7 +25,8 @@ public:
     enum type_t{
         Tile,
         Op,
-        Scope
+        Scope,
+        Trans
     };
 protected:
     static const std::unordered_map<type_t, std::string> type2name_; 
@@ -43,27 +44,14 @@ protected:
     mutable ActiveTensor active_tensors_;
 
 public:
-    Node(type_t, config::CompoundConfigNode config); // TBD
-    
+    Node(type_t, config::CompoundConfigNode config);
+    std::unordered_map<std::string, std::pair<int, int> > ParseFactors(const std::string& buffer);
+    std::vector<std::string> ParsePermutations(const std::string & buffer);
+    Node::ParseStorageLevel(config::CompoundConfigNode directive); 
+
+    virtual void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const; // TBD
+
 }
-
-class ScopeNode: public Node {
-public:
-    enum type_t {
-        Sequential,
-        Sharing,
-        Parallel,
-        Pipeline
-    };
-    ScopeNode(config::CompoundConfigNode config);
-    void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
-    // void accept(Visitor* visitor) const {visitor->visitScope(this);}
-    ScopeNode::type_t get_scope_type() const {return type;}
-
-private: 
-    ScopeNode::type_t type;
-    
-};
 
 class TileNode: public Node {
 public:
@@ -88,6 +76,36 @@ public:
     // loop::Nest constructLoopNest(const SymbolTable* symbol_table = nullptr) const;
     // size_t n_level() const {return loopnests_.size();}
     // const std::vector<loop::TileFlow::Descriptor>& get_loops() const {return loopnests_;}
+};
+
+class TransNode: public Node{
+    std::string trans_name_;
+    int trans_index_;
+public:
+    TransNode(config::CompoundConfigNode config);
+    // TBD
+    // void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
+    // // void accept(Visitor* visitor) const {visitor->visitTrans(this);}
+    // const std::string& get_trans_name() const {return trans_name_;}
+    // int get_trans_index() const {return trans_index_;}
+}
+
+class ScopeNode: public Node {
+public:
+    enum type_t {
+        Sequential,
+        Sharing,
+        Parallel,
+        Pipeline
+    };
+    ScopeNode(config::CompoundConfigNode config);
+    void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
+    // void accept(Visitor* visitor) const {visitor->visitScope(this);}
+    ScopeNode::type_t get_scope_type() const {return type;}
+
+private: 
+    ScopeNode::type_t type;
+    
 };
 
 class OpNode: public Node {

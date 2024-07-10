@@ -41,10 +41,10 @@ Node* RecursiveParse(config::CompoundConfigNode config){
         node = new TileNode(config); // TBD
     }
     else if (node_type == "op") {
-        node = new OpNode(config); // TBD
+        node = new OpNode(config);
     }
     else if (node_type == "scope") {
-        node = new ScopeNode(config); // TBD
+        node = new ScopeNode(config);
     }
     else {
         TILEFLOW_ERROR(node_type << " is not a valid type.");
@@ -69,6 +69,98 @@ Node* RecursiveParse(config::CompoundConfigNode config){
     // }
 
     return node;
+}
+
+
+std::unordered_map<std::string, std::pair<int, int> > Node::ParseFactors(
+    const std::string& buffer) {
+    std::unordered_map<std::string, std::pair<int, int> > loop_bounds;
+    std::regex re("([A-Za-z]+)[[:space:]]*[=]*[[:space:]]*([0-9A-Za-z_?]+)(,([0-9]+))?", std::regex::extended);
+    std::smatch sm;
+    std::string str = std::string(buffer);
+    str = str.substr(0, str.find("#")); // remove comments
+
+    while (std::regex_search(str, sm, re)) // each time load one []=[]
+    {
+        std::string dimension_name = sm[1];
+
+        int end;
+        if (macros.exists(sm[2])){
+            macros.lookupValue(sm[2], end);
+        }
+        else {
+            char* ptr = nullptr;
+            end = std::strtol(sm[2].str().c_str(), &ptr, 10);
+            if (ptr && *ptr) {
+                end = global_symbol_table_.insert(sm[2]);
+            }
+        }
+
+        int residual_end = end;
+        if (sm[4] != "")
+        {
+            residual_end = std::stoi(sm[4]);
+        }
+
+        loop_bounds[dimension_name] = {end, residual_end};
+
+        str = sm.suffix().str();
+    }
+
+    return loop_bounds;
+}
+
+std::vector<std::string> Node::ParsePermutations(
+    const std::string & buffer 
+){
+    std::vector<std::string> iters;
+    
+    std::istringstream iss(buffer);
+    char token;
+    while (iss >> token) {
+        iters.push_back(std::string(1, token));
+    }
+    
+    return iters;
+}
+
+void Node::ParseStorageLevel(config::CompoundConfigNode directive)
+{
+  auto num_storage_levels = arch_props_.StorageLevels();
+    
+  //
+  // Find the target storage level. This can be specified as either a name or an ID.
+  //
+  std::string storage_level_name;
+  unsigned storage_level_id;
+    
+  if (directive.lookupValue("target", storage_level_name)) // find current memory level id
+  {
+    // Find this name within the storage hierarchy in the arch specs.
+    for (storage_level_id = 0; storage_level_id < num_storage_levels; storage_level_id++)
+    {
+      if (arch_props_.Specs().topology.GetStorageLevel(storage_level_id)->level_name == storage_level_name)
+        break;
+    }
+    if (storage_level_id == num_storage_levels)
+    {
+      std::cerr << "ERROR: target storage level not found: " << storage_level_name << std::endl;
+      exit(1);
+    }
+  }
+  else
+  {
+    int id;
+    assert(directive.lookupValue("target", id));
+    assert(id >= 0  && id < int(num_storage_levels));
+    storage_level_id = static_cast<unsigned>(id);
+  }
+
+  assert(storage_level_id < num_storage_levels);
+
+  storage_level_name_ = storage_level_name;
+  storage_level_ = storage_level_id;
+  name_ += "::" + storage_level_name_;
 }
 
 } // namespace TileExp

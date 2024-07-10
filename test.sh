@@ -1,2 +1,2 @@
-./build/TileExp ./tests/00-test-graph/*.yaml
+./build/TileExp ./tests/01-test-graph-huawei/*.yaml
 

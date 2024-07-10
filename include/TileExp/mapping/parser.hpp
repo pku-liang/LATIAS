@@ -38,4 +38,6 @@ ExpMapping ParseAndConstruct(config::CompoundConfigNode config,
                           model::TileExp::Graph& arch_specs,
                           const problem::TileExp::Workloads& workloads);
 
+// TileExp::Node* RecursiveParse(config::CompoundConfigNode config);
+
 } // namespace mapping

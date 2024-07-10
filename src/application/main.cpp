@@ -134,9 +134,9 @@ int main(int argc, char* argv[])
   
   // note that we do not consider the network specs 
 
-  // parse mapping
+  // parse mapping -- input config, graph topology and workloads
   auto mapping = 
-    mapping::TileFlow::ParseAndConstruct(root.lookup("mapping"), arch_specs_, workloads); // parse mapping
+    mapping::TileExp::ParseAndConstruct(root.lookup("mapping"), graph, workloads); // parse mapping
   
 
   return 0;

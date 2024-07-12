@@ -31,13 +31,20 @@
 #include "model/engine.hpp"
 #include "compound-config/compound-config.hpp"
 
+#include "TileExp/mapping/mapping.hpp"
+
+
 namespace mapping
 {
+namespace TileExp{
 
 ExpMapping ParseAndConstruct(config::CompoundConfigNode config,
-                          model::TileExp::Graph& arch_specs,
-                          const problem::TileExp::Workloads& workloads);
+                          model::TileExp::Graph& graph,
+                          const problem::TileExp::Workloads& workloads,
+                          model::Engine::Specs& arch_specs);
 
 // TileExp::Node* RecursiveParse(config::CompoundConfigNode config);
+
+} // namespace TileExp
 
 } // namespace mapping

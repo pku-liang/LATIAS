@@ -12,6 +12,9 @@
 #include "./TileExp/model/graph.hpp"
 #include "./TileExp/common.hpp"
 #include "./TileExp/problem/problem.hpp"
+#include "./TileExp/mapping/mapping.hpp"
+#include "./TileExp/mapping/parser.hpp"
+
 
 void show_energy(
   const model::Engine::Specs& EngineSpecs,
@@ -77,6 +80,7 @@ int main(int argc, char* argv[])
 
   // node information hide in model::Engine::Specs::topology
   model::Engine::Specs arch_specs_ = model::Engine::ParseSpecs(arch, is_sparse_topology); // only for sepc.topology
+  mapping::LevelName2IdxMap = arch_specs_.topology.GetName2IdxMap();
 
   if (root.exists("ERT")) // we don't consider this
   {
@@ -136,7 +140,7 @@ int main(int argc, char* argv[])
 
   // parse mapping -- input config, graph topology and workloads
   auto mapping = 
-    mapping::TileExp::ParseAndConstruct(root.lookup("mapping"), graph, workloads); // parse mapping
+    mapping::TileExp::ParseAndConstruct(root.lookup("mapping"), graph, workloads_instance, arch_specs_); // parse mapping
   
 
   return 0;

@@ -6,11 +6,18 @@
 
 #include "TileExp/common.hpp"
 #include "TileExp/problem/problem.hpp"
+#include "TileExp/model/graph.hpp"
 
 
 namespace mapping{
 
+std::map<std::string, unsigned> LevelName2IdxMap;
+
 namespace TileExp{
+
+void tolower(std::string& str){
+std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {return std::tolower(c);});
+}
 
 typedef std::unordered_map<std::string, std::string> StringMap;
 const problem::TileExp::Workloads* p_workloads_ = nullptr;
@@ -26,12 +33,14 @@ public:
         Tile,
         Op,
         Scope,
-        Trans
+        Trans // TBD
     };
 protected:
     static const std::unordered_map<type_t, std::string> type2name_; 
     Node::type_t type_;
     std::string name_;
+    std::string target_level_name;
+    unsigned target_level_id;
     mutable const Node* parent_ = nullptr;
     std::vector<const Node*> children_;
     mutable std::string storage_level_name_;
@@ -41,17 +50,24 @@ protected:
 
     dataflow_mode dataflow_mode_;
 
-    mutable ActiveTensor active_tensors_;
+    // mutable ActiveTensor active_tensors_;
 
 public:
     Node(type_t, config::CompoundConfigNode config);
+
+    unsigned get_storage_level() { return storage_level_; };
+    std::string get_storage_name() { return storage_level_name_; };
+
     std::unordered_map<std::string, std::pair<int, int> > ParseFactors(const std::string& buffer);
     std::vector<std::string> ParsePermutations(const std::string & buffer);
-    Node::ParseStorageLevel(config::CompoundConfigNode directive); 
+    void ParseStorageLevel(config::CompoundConfigNode directive); 
 
-    virtual void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const; // TBD
+    // virtual void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const; // TBD
+    
+    void add_child(const Node* child);
+    void set_parent(const Node* parent) const {parent_ = parent;}
 
-}
+};
 
 class TileNode: public Node {
 public:
@@ -64,10 +80,11 @@ private:
     // std::vector<loop::TileFlow::Descriptor> loopnests_; // 描述当前循环 -- 暂时注释
     TileNode::type_t type_;
     bool multicast_enabled_ = true;
+    // model::Engine::Specs arch_sepcs_;
 
 public:
     TileNode(config::CompoundConfigNode config);
-    void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
+    // void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
     // void accept(Visitor* visitor) const {visitor->visitTile(this);}
     bool is_spatial() const {return type_ == Spatial;}
     bool is_multicast_enabled() const {return multicast_enabled_;}
@@ -88,7 +105,7 @@ public:
     // // void accept(Visitor* visitor) const {visitor->visitTrans(this);}
     // const std::string& get_trans_name() const {return trans_name_;}
     // int get_trans_index() const {return trans_index_;}
-}
+};
 
 class ScopeNode: public Node {
 public:
@@ -99,7 +116,7 @@ public:
         Pipeline
     };
     ScopeNode(config::CompoundConfigNode config);
-    void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
+    // void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
     // void accept(Visitor* visitor) const {visitor->visitScope(this);}
     ScopeNode::type_t get_scope_type() const {return type;}
 
@@ -114,31 +131,38 @@ class OpNode: public Node {
     // std::shared_ptr<problem::TileFlow::Workload> p_workload;
 public:
     OpNode(config::CompoundConfigNode config);
-    void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
+    // void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
     const std::string & get_name() const {return op_name_;}
     // void accept(Visitor* visitor) const {visitor->visitOp(this);}
     // const std::shared_ptr<problem::TileFlow::Workload>& get_workload() const {return p_workload;}
 };
 
-class ExpMapping: public Mapping{
-private:
+class TransNode: public Node{
+    TransNode();
+};
+
+// get mapping tree and fanout XY map
+struct ExpMapping: public Mapping{
+
     std::map<std::string, StringMap> ExpFanoutXMap;
     std::map<std::string, StringMap> ExpFanoutYMap;
     Node* root;
+    model::Engine::Specs arch_specs_;
 
-public:
+    // function 
+
     ExpMapping(){};
    
     // Parse
     void ParseFanoutMap(model::TileExp::Graph& arch_specs); // parse fanout map to ExpFanoutXMap and ExpFanoutYMap
 
     // Get
-    std::map<std::string, StringMap> GetFanoutXMap() const { return ExpFanoutXMap; }
-    std::map<std::string, StringMap> GetFanoutYMap() const { return ExpFanoutYMap; }
+    // std::map<std::string, StringMap> GetFanoutXMap() const { return ExpFanoutXMap; }
+    // std::map<std::string, StringMap> GetFanoutYMap() const { return ExpFanoutYMap; }
 
     // Print
     void Print();
-}
+};
 
 
 } // end namespace TileExp

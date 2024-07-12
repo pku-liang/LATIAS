@@ -5,25 +5,32 @@
 #include "TileExp/mapping/mapping.hpp"
 // #include "TileExp/mapper/mapper.hpp"
 
-using TileFlow::macros;
-using TileFlow::verbose_level;
+using TileExp::macros;
+using TileExp::verbose_level;
 
 namespace mapping{
 
 namespace TileExp{
 
+Node* RecursiveParse(config::CompoundConfigNode config);
 
 ExpMapping ParseAndConstruct(config::CompoundConfigNode config,
                           model::TileExp::Graph& graph,
-                          const problem::TileFlow::Workloads& workloads)
+                          const problem::TileExp::Workloads& workloads, 
+                          model::Engine::Specs& arch_specs)
 {
     // arch_props_ = ArchProperties();
     // arch_props_.Construct(arch_specs);
+
     p_workloads_ = &workloads;
+    // arch_specs_ = arch_specs;
+
+    auto graph_ = graph;
+    auto arch_specs_ = arch_specs;
 
     ExpMapping mapping;
-    mapping.root = RecursiveParse(config); // TBD
-    mapping.ParseFanoutMap(graph); // TBD
+    mapping.root = RecursiveParse(config); //
+    // mapping.ParseFanoutMap(graph); // TBD
 
     return mapping;
 }
@@ -38,7 +45,7 @@ Node* RecursiveParse(config::CompoundConfigNode config){
 
     Node * node = nullptr;
     if (node_type == "tile") {
-        node = new TileNode(config); // TBD
+        node = new TileNode(config);
     }
     else if (node_type == "op") {
         node = new OpNode(config);
@@ -46,8 +53,11 @@ Node* RecursiveParse(config::CompoundConfigNode config){
     else if (node_type == "scope") {
         node = new ScopeNode(config);
     }
+    else if (node_type == "trans"){
+        node = new TransNode(config); // TBD
+    }
     else {
-        TILEFLOW_ERROR(node_type << " is not a valid type.");
+        TILEEXP_ERROR("Current node type is not a valid type.");
     }
         
     assert(node != nullptr);
@@ -124,43 +134,45 @@ std::vector<std::string> Node::ParsePermutations(
     return iters;
 }
 
-void Node::ParseStorageLevel(config::CompoundConfigNode directive)
+void Node::ParseStorageLevel(config::CompoundConfigNode directive, model::Engine::Specs arch_specs)
 {
-  auto num_storage_levels = arch_props_.StorageLevels();
-    
-  //
-  // Find the target storage level. This can be specified as either a name or an ID.
-  //
-  std::string storage_level_name;
-  unsigned storage_level_id;
-    
-  if (directive.lookupValue("target", storage_level_name)) // find current memory level id
-  {
-    // Find this name within the storage hierarchy in the arch specs.
-    for (storage_level_id = 0; storage_level_id < num_storage_levels; storage_level_id++)
+    auto topology = arch_specs.topology;
+    auto num_arith_levels = topology.ArithmeticMap() + 1;
+    auto num_storage_levels = topology.NumLevels() - num_arith_levels;
+        
+    //
+    // Find the target storage level. This can be specified as either a name or an ID.
+    //
+    std::string storage_level_name;
+    unsigned storage_level_id;
+        
+    if (directive.lookupValue("target", storage_level_name)) // find current memory level id
     {
-      if (arch_props_.Specs().topology.GetStorageLevel(storage_level_id)->level_name == storage_level_name)
-        break;
+        // Find this name within the storage hierarchy in the arch specs.
+        for (storage_level_id = num_arith_levels; storage_level_id < topology.NumLevels(); storage_level_id++)
+        {
+        if (topology.GetLevel(storage_level_id)->level_name == storage_level_name)
+            break;
+        }
+        if (storage_level_id == topology.NumLevels())
+        {
+        std::cerr << "ERROR: target storage level not found: " << storage_level_name << std::endl;
+        exit(1);
+        }
     }
-    if (storage_level_id == num_storage_levels)
+    else
     {
-      std::cerr << "ERROR: target storage level not found: " << storage_level_name << std::endl;
-      exit(1);
+        int id;
+        assert(directive.lookupValue("target", id));
+        assert(id >= num_arith_levels  && id < int(topology.NumLevels()));
+        storage_level_id = static_cast<unsigned>(id);
     }
-  }
-  else
-  {
-    int id;
-    assert(directive.lookupValue("target", id));
-    assert(id >= 0  && id < int(num_storage_levels));
-    storage_level_id = static_cast<unsigned>(id);
-  }
 
-  assert(storage_level_id < num_storage_levels);
+    assert(storage_level_id < topology.NumLevels());
 
-  storage_level_name_ = storage_level_name;
-  storage_level_ = storage_level_id;
-  name_ += "::" + storage_level_name_;
+    storage_level_name_ = storage_level_name;
+    storage_level_ = storage_level_id;
+    name_ += "::" + storage_level_name_;
 }
 
 } // namespace TileExp

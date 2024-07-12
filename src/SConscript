@@ -107,7 +107,9 @@ if "NTLPATH" in os.environ:
 # ./common.cpp
 # """)
 
-lib_sources = Split(""" 
+lib_sources = Split("""
+./mapping/parser.cpp
+./mapping/mapping.cpp                    
 ./problem/parser.cpp
 ./model/graph.cpp
 ./common.cpp

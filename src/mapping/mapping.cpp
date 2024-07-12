@@ -1,16 +1,20 @@
-#pragma once 
-
 #include "model/engine.hpp"
 #include "compound-config/compound-config.hpp"
 #include "mapping/mapping.hpp"
 
 #include "TileExp/common.hpp"
 #include "TileExp/problem/problem.hpp"
+#include "TileExp/mapping/mapping.hpp"
+#include "TileExp/mapping/parser.hpp"
 
 
 namespace mapping{
 
 namespace TileExp{
+
+// void tolower(std::string& str){
+//     std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {return std::tolower(c);});
+// }
 
 const std::unordered_map<Node::type_t, std::string> Node::type2name_ = {
     {Node::Tile, "Tile"},
@@ -19,9 +23,9 @@ const std::unordered_map<Node::type_t, std::string> Node::type2name_ = {
     {Node::Trans, "Trans"}
 };
 
-cosnt std::unordered_map<std::string, Node::type_t> name2dataflow_mode_ = {
-    {"forward", Forward},
-    {"write-back", Write_back}
+const std::unordered_map<std::string, dataflow_mode> name2dataflow_mode_ = {
+    {"forward", dataflow_mode::Forward},
+    {"write-back", dataflow_mode::Write_back}
 };
 
 Node::Node(
@@ -29,17 +33,30 @@ Node::Node(
     config::CompoundConfigNode config): type_(t){
     name_ = type2name_.at(type_);
 
-    if (config.exists("bypass"))
-        config.lookupArrayValue("bypass", bypassed_);
+    // Ray -- add target level
+    if (config.exists("target")){
+        config.lookupValue("target", target_level_name);
+        if (mapping::LevelName2IdxMap.find(target_level_name) == mapping::LevelName2IdxMap.end()) {
+            TILEEXP_ERROR("Target level " << target_level_name << " is not defined.");
+        }
+        target_level_id = mapping::LevelName2IdxMap.at(target_level_name);
+    }
+    else{
+        TILEEXP_ERROR("No target level is specified.");
+    }
+
+    if (config.exists("bypass")) config.lookupArrayValue("bypass", bypassed_);
     
     // Ray -- add dataflow mode
     std::string dataflow_mode_s;
-    config.lookupValue("dataflow-mode", dataflow_mode_s)
+    config.lookupValue("dataflow-mode", dataflow_mode_s);
     dataflow_mode_ = name2dataflow_mode_.at(dataflow_mode_s);
 
+    // may error
     config.lookupValue("profile", profile_);
     std::string tag = "";
     config.lookupValue("tag", tag);
+    
     if (tag.size())
         name_ += "::" + tag;
 }
@@ -106,35 +123,72 @@ TileNode::TileNode(config::CompoundConfigNode config): Node(Node::Tile, config){
     
     TILEEXP_ASSERT(iters.size() == loop_bounds.size(), "permutation " << buffer << " & factor iter mismatch");
 
-    ParseStorageLevel(config); // 找到当前的storage level，并存储在storage_level_name_和storage_level_中 // TBD
+    ParseStorageLevel(config); // 找到当前的storage level，并存储在storage_level_name_和storage_level_中
 
     if (config.exists("multicast")) { // not use
         config.lookupValue("multicast", multicast_enabled_);
     }
 
-    unsigned split = iters.size();
-    config.lookupValue("split", split); // used
-    for (int i = (int)iters.size()-1; i >= 0; --i) {
-        loopnests_.emplace_back();
-        loop::TileFlow::Descriptor& loop = loopnests_.back();
-        loop.name_ = iters[i];
-        loop.dimension = problem::GetShape()->FactorizedDimensionNameToID.at(loop.name_); // 全局的ID
-        loop.start = 0;
-        loop.end = loop_bounds[iters[i]].first;
-        loop.residual_end = loop_bounds[iters[i]].second;
-        loop.stride = 1;
-        loop.spacetime_dimension = type_s == "spatial"? 
-        ((unsigned)i < split? spacetime::Dimension::SpaceX : spacetime::Dimension::SpaceY) 
-        : spacetime::Dimension::Time; 
-    }
+    // TBD
+    // unsigned split = iters.size();
+    // config.lookupValue("split", split); // used
+    // for (int i = (int)iters.size()-1; i >= 0; --i) {
+    //     loopnests_.emplace_back();
+    //     loop::TileFlow::Descriptor& loop = loopnests_.back();
+    //     loop.name_ = iters[i];
+    //     loop.dimension = problem::GetShape()->FactorizedDimensionNameToID.at(loop.name_); // 全局的ID
+    //     loop.start = 0;
+    //     loop.end = loop_bounds[iters[i]].first;
+    //     loop.residual_end = loop_bounds[iters[i]].second;
+    //     loop.stride = 1;
+    //     loop.spacetime_dimension = type_s == "spatial"? 
+    //     ((unsigned)i < split? spacetime::Dimension::SpaceX : spacetime::Dimension::SpaceY) 
+    //     : spacetime::Dimension::Time; 
+    // }
     
     name_ += type_ == Temporal? "::Temporal" : "::Spatial"; 
 }
 
 OpNode::OpNode(config::CompoundConfigNode config): Node(Node::Op, config) {
     assert(config.lookupValue("name", op_name_));
-    p_workload = p_workloads_->get_workload(op_name_);
+    // p_workload = p_workloads_->get_workload(op_name_); // TBD
     name_ += "::" + op_name_;
+}
+
+TransNode::TransNode(config::CompoundConfigNode config): Node(Node::Trans, config) {
+    // assert(config.lookupValue("name", trans_name_));
+    // name_ += "::" + trans_name_;
+}
+
+
+void Node::add_child(const Node* child){
+    // if (type_ == Node::Scope) {
+        
+    //     unsigned storage_level;
+    //     std::string storage_level_name = "Unknown";
+    //     if (child->get_type() == Node::Tile) {
+    //         // if (static_cast<const TileNode*>(child)->get_tile_type() == TileNode::Temporal){
+    //         //     storage_level = child->get_storage_level() + 1;
+    //         // }
+    //         // else {
+    //             storage_level = child->get_storage_level();
+    //             storage_level_name = child->get_storage_name();
+    //         // }
+    //     }
+    //     else if (child->get_type() == Node::Scope) {
+    //         storage_level = child->get_storage_level();
+    //         storage_level_name = child->get_storage_name();
+    //     }
+    //     else {
+    //         TILEFLOW_ERROR("Scope Node should not have a op child");
+    //     }
+    //     assert(storage_level_ == unsigned(-1) || storage_level_ == storage_level);
+    //     storage_level_ = storage_level;
+    //     storage_level_name_ = storage_level_name;
+    // }
+    assert(child != nullptr); 
+    children_.push_back(child); 
+    child->set_parent(this);
 }
 
 } // namespace TileExp

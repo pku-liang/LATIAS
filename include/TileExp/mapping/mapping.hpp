@@ -58,6 +58,7 @@ public:
     unsigned get_storage_level() { return storage_level_; };
     std::string get_storage_name() { return storage_level_name_; };
 
+    // parser --  loop bounds {name, [low, high]}
     std::unordered_map<std::string, std::pair<int, int> > ParseFactors(const std::string& buffer);
     std::vector<std::string> ParsePermutations(const std::string & buffer);
     void ParseStorageLevel(config::CompoundConfigNode directive); 
@@ -77,15 +78,15 @@ public:
     };
 private:
 
-    std::vector<loop::TileExp::Descriptor> loopnests_; // 描述当前循环
+    std::vector<loop::TileExp::Descriptor> loopnests_; // describe current tile node's loop factor
     TileNode::type_t type_;
     bool multicast_enabled_ = true;
     // model::Engine::Specs arch_sepcs_;
 
 public:
     TileNode(config::CompoundConfigNode config);
-    void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, // TBD 
-            std::ostream& = std::cout) const override;
+    // void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, // TBD 
+    //         std::ostream& = std::cout) const override;
     // void accept(Visitor* visitor) const {visitor->visitTile(this);} // TBD
     bool is_spatial() const {return type_ == Spatial;}
     bool is_multicast_enabled() const {return multicast_enabled_;}
@@ -118,7 +119,7 @@ public:
     };
     ScopeNode(config::CompoundConfigNode config);
     void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
-    void accept(Visitor* visitor) const {visitor->visitScope(this);}
+    // void accept(Visitor* visitor) const {visitor->visitScope(this);} // TBD
     ScopeNode::type_t get_scope_type() const {return type;}
 
 private: 
@@ -134,7 +135,7 @@ public:
     OpNode(config::CompoundConfigNode config);
     void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
     const std::string & get_name() const {return op_name_;}
-    void accept(Visitor* visitor) const {visitor->visitOp(this);}
+    // void accept(Visitor* visitor) const {visitor->visitOp(this);} // TBD
     const std::shared_ptr<problem::TileFlow::Workload>& get_workload() const {return p_workload;}
 };
 

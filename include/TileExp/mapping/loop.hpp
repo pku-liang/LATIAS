@@ -9,7 +9,7 @@ namespace TileExp{
     class Descriptor: public loop::Descriptor {
     public: 
         std::string name_;
-        void Print(std::ostream& out, bool long_form = true) const;
+        void Print(std::ostream& out, bool long_form = true) const; // TBD
     };
 
 } // namespace TileExp 

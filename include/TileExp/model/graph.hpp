@@ -6,6 +6,9 @@
 
 //
 
+// this model describes the topology graph, 
+// while each graph node describes the specification of each architecure level 
+
 
 namespace model{
 

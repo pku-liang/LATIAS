@@ -150,6 +150,32 @@ TileNode::TileNode(config::CompoundConfigNode config): Node(Node::Tile, config){
     name_ += type_ == Temporal? "::Temporal" : "::Spatial"; 
 }
 
+loop::Nest TileNode::constructLoopNest(const SymbolTable* symbol_table_) const{
+    loop::Nest loop_nest;
+    uint64_t num_subnests_added = 0;
+    for (auto loop: loopnests_)
+    {
+        // Ignore trivial factors
+        // This reduces computation time by 1.5x on average.
+        if (loop.end <= 0) {
+            assert(symbol_table_);
+            loop.residual_end = loop.end = symbol_table_->lookup(loop.end).value_;
+        }
+        if (loop.start + loop.stride < loop.end){
+            assert((type_==TileNode::Spatial && loop::IsSpatial(loop.spacetime_dimension))
+            || (type_==TileNode::Temporal && !loop::IsSpatial(loop.spacetime_dimension)));
+            loop_nest.AddLoop(loop);
+            num_subnests_added ++;
+        }
+    }
+    if (num_subnests_added == 0) {
+        loop_nest.AddLoop(0, 0, 1, 1, type_ == TileNode::Spatial? spacetime::Dimension::SpaceX : spacetime::Dimension::Time);
+    }
+    loop_nest.AddStorageTilingBoundary();
+    return loop_nest;
+}
+
+
 OpNode::OpNode(config::CompoundConfigNode config): Node(Node::Op, config) {
     assert(config.lookupValue("name", op_name_));
     // p_workload = p_workloads_->get_workload(op_name_); // TBD

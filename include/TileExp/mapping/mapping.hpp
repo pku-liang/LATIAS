@@ -77,22 +77,23 @@ public:
     };
 private:
 
-    // std::vector<loop::TileFlow::Descriptor> loopnests_; // 描述当前循环 -- 暂时注释
+    std::vector<loop::TileExp::Descriptor> loopnests_; // 描述当前循环
     TileNode::type_t type_;
     bool multicast_enabled_ = true;
     // model::Engine::Specs arch_sepcs_;
 
 public:
     TileNode(config::CompoundConfigNode config);
-    // void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
-    // void accept(Visitor* visitor) const {visitor->visitTile(this);}
+    void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, // TBD 
+            std::ostream& = std::cout) const override;
+    // void accept(Visitor* visitor) const {visitor->visitTile(this);} // TBD
     bool is_spatial() const {return type_ == Spatial;}
     bool is_multicast_enabled() const {return multicast_enabled_;}
     TileNode::type_t get_tile_type() const {return type_;}
     
-    // loop::Nest constructLoopNest(const SymbolTable* symbol_table = nullptr) const;
-    // size_t n_level() const {return loopnests_.size();}
-    // const std::vector<loop::TileFlow::Descriptor>& get_loops() const {return loopnests_;}
+    loop::Nest constructLoopNest(const SymbolTable* symbol_table = nullptr) const; // TBD
+    size_t n_level() const {return loopnests_.size();}
+    const std::vector<loop::TileExp::Descriptor>& get_loops() const {return loopnests_;}
 };
 
 class TransNode: public Node{
@@ -101,10 +102,10 @@ class TransNode: public Node{
 public:
     TransNode(config::CompoundConfigNode config);
     // TBD
-    // void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
-    // // void accept(Visitor* visitor) const {visitor->visitTrans(this);}
-    // const std::string& get_trans_name() const {return trans_name_;}
-    // int get_trans_index() const {return trans_index_;}
+    void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
+    // void accept(Visitor* visitor) const {visitor->visitTrans(this);}
+    const std::string& get_trans_name() const {return trans_name_;}
+    int get_trans_index() const {return trans_index_;}
 };
 
 class ScopeNode: public Node {
@@ -116,8 +117,8 @@ public:
         Pipeline
     };
     ScopeNode(config::CompoundConfigNode config);
-    // void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
-    // void accept(Visitor* visitor) const {visitor->visitScope(this);}
+    void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
+    void accept(Visitor* visitor) const {visitor->visitScope(this);}
     ScopeNode::type_t get_scope_type() const {return type;}
 
 private: 
@@ -131,10 +132,10 @@ class OpNode: public Node {
     // std::shared_ptr<problem::TileFlow::Workload> p_workload;
 public:
     OpNode(config::CompoundConfigNode config);
-    // void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
+    void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
     const std::string & get_name() const {return op_name_;}
-    // void accept(Visitor* visitor) const {visitor->visitOp(this);}
-    // const std::shared_ptr<problem::TileFlow::Workload>& get_workload() const {return p_workload;}
+    void accept(Visitor* visitor) const {visitor->visitOp(this);}
+    const std::shared_ptr<problem::TileFlow::Workload>& get_workload() const {return p_workload;}
 };
 
 class TransNode: public Node{

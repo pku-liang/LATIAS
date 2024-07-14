@@ -26,10 +26,13 @@ ExpMapping ParseAndConstruct(config::CompoundConfigNode config,
     // arch_specs_ = arch_specs;
 
     auto graph_ = graph;
-    auto arch_specs_ = arch_specs;
+    // auto arch_specs_ = arch_specs;
 
     ExpMapping mapping;
+    // build mapping tree
     mapping.root = RecursiveParse(config); //
+    mapping.arch_specs_ = arch_specs_;
+    // build fanout map -- graph-based
     // mapping.ParseFanoutMap(graph); // TBD
 
     return mapping;

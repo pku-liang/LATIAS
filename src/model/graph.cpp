@@ -250,6 +250,11 @@ void Graph::Print(){
 
 void Graph::BFS(std::string NodeName, std::unordered_set<std::string>& Visited){
     if(Visited.count(NodeName)) return;
+    else{
+        TopologyName2Id[NodeName] = Idx;
+        TopologyId2Name[Idx] = NodeName;
+        Idx++;
+    }
 
     std::cout << "Node:" << NodeName << std::endl;
     Visited.insert(NodeName);

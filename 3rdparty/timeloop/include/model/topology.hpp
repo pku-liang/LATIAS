@@ -119,6 +119,7 @@ class Topology : public Module
     std::vector<std::shared_ptr<NetworkSpecs>> networks;
     std::map<unsigned, unsigned> storage_map;
     std::map<std::string, unsigned> name2idx_map;
+    std::map<unsigned, std::string> idx2name_map;
     unsigned arithmetic_map; // arithmetic num - 1
 
    public:
@@ -141,6 +142,7 @@ class Topology : public Module
       storage_map = other.storage_map;
       arithmetic_map = other.arithmetic_map;
       name2idx_map = other.name2idx_map;
+      idx2name_map = other.idx2name_map;
     }
 
     // Copy-and-swap idiom.
@@ -153,6 +155,7 @@ class Topology : public Module
       swap(first.storage_map, second.storage_map);
       swap(first.arithmetic_map, second.arithmetic_map);
       swap(first.name2idx_map, second.name2idx_map);
+      swap(first.idx2name_map, second.idx2name_map);
     }
 
     Specs& operator = (Specs other)
@@ -162,6 +165,7 @@ class Topology : public Module
     }
 
     std::map<std::string, unsigned> GetName2IdxMap() { return name2idx_map; }
+    std::map<unsigned, std::string> GetIdx2NameMap() { return idx2name_map; }
     std::map<unsigned, unsigned> GetStorageMap() { return storage_map; }
 
     unsigned NumLevels() const;
@@ -178,10 +182,12 @@ class Topology : public Module
     void AddInferredNetwork(std::shared_ptr<LegacyNetwork::Specs> specs);
     void AddNetwork(std::shared_ptr<NetworkSpecs> specs);
     void AddName2IdxMap(std::string& name, unsigned idx) { name2idx_map[name] = idx; };
+    void AddIdx2NameMap(unsigned name, std::string& idx) { idx2name_map[name] = idx; };
 
     unsigned StorageMap(unsigned i) const { return storage_map.at(i); }
     unsigned ArithmeticMap() const { return arithmetic_map; }
     unsigned Name2IdxMap(std::string& name) const { return name2idx_map.at(name); };
+    unsigned Idx2NameMap(unsigned name) const { return idx2name_map.at(name); };
 
     std::shared_ptr<LevelSpecs> GetLevel(unsigned level_id) const;
     std::shared_ptr<BufferLevel::Specs> GetStorageLevel(unsigned storage_level_id) const;

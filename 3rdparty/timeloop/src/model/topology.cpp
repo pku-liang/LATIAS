@@ -1047,6 +1047,8 @@ Topology::Specs Topology::ParseTreeSpecs(config::CompoundConfigNode designRoot, 
     // Ray
     // std::cout << "Levels: " << storage->level_name << std::endl;
     specs.AddName2IdxMap(storage->level_name, i);
+    specs.AddIdx2NameMap(i, storage->level_name);
+    
     // std::cout << "Name2IdxMap: " << specs.Name2IdxMap(storage->level_name) << std::endl;
   }
  

@@ -123,28 +123,29 @@ TileNode::TileNode(config::CompoundConfigNode config): Node(Node::Tile, config){
     
     TILEEXP_ASSERT(iters.size() == loop_bounds.size(), "permutation " << buffer << " & factor iter mismatch");
 
-    ParseStorageLevel(config); // 找到当前的storage level，并存储在storage_level_name_和storage_level_中
+    // this part now in Node()
+    // ParseStorageLevel(config); // 找到当前的storage level，并存储在storage_level_name_和storage_level_中
 
-    if (config.exists("multicast")) { // not use
+    if (config.exists("multicast")) { 
         config.lookupValue("multicast", multicast_enabled_);
     }
 
     // TBD
-    // unsigned split = iters.size();
-    // config.lookupValue("split", split); // used
-    // for (int i = (int)iters.size()-1; i >= 0; --i) {
-    //     loopnests_.emplace_back();
-    //     loop::TileFlow::Descriptor& loop = loopnests_.back();
-    //     loop.name_ = iters[i];
-    //     loop.dimension = problem::GetShape()->FactorizedDimensionNameToID.at(loop.name_); // 全局的ID
-    //     loop.start = 0;
-    //     loop.end = loop_bounds[iters[i]].first;
-    //     loop.residual_end = loop_bounds[iters[i]].second;
-    //     loop.stride = 1;
-    //     loop.spacetime_dimension = type_s == "spatial"? 
-    //     ((unsigned)i < split? spacetime::Dimension::SpaceX : spacetime::Dimension::SpaceY) 
-    //     : spacetime::Dimension::Time; 
-    // }
+    unsigned split = iters.size();
+    config.lookupValue("split", split); // used
+    for (int i = (int)iters.size()-1; i >= 0; --i) {
+        loopnests_.emplace_back();
+        loop::TileFlow::Descriptor& loop = loopnests_.back();
+        loop.name_ = iters[i];
+        loop.dimension = problem::GetShape()->FactorizedDimensionNameToID.at(loop.name_); // 全局的ID
+        loop.start = 0;
+        loop.end = loop_bounds[iters[i]].first;
+        loop.residual_end = loop_bounds[iters[i]].second;
+        loop.stride = 1;
+        loop.spacetime_dimension = type_s == "spatial"? 
+        ((unsigned)i < split? spacetime::Dimension::SpaceX : spacetime::Dimension::SpaceY) 
+        : spacetime::Dimension::Time; 
+    }
     
     name_ += type_ == Temporal? "::Temporal" : "::Spatial"; 
 }

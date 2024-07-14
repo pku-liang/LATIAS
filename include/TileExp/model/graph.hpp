@@ -59,6 +59,11 @@ class Graph: public model::Topology {
         unsigned node_num;
         unsigned arith_num; 
 
+        unsigned Idx = 0;
+        std::map<std::string, unsigned> TopologyName2Id;
+        std::map<unsigned, std::string> TopologyId2Name;
+        
+
     public:
 
         // construct
@@ -78,8 +83,10 @@ class Graph: public model::Topology {
 
         // find values
         unsigned GetNodeCount();
+        std::map<std::string, unsigned> GetTopologyName2IdxMap() { return TopologyName2Id; };
+        std::map<unsigned, std::string> GetTopologyIdx2NameMap() { return TopologyId2Name; };
         
-        // look up values by name
+        // look up specs by name
         model::BufferLevel::Specs& LookupBufferSpecs(std::string Name);
         model::LegacyNetwork::Specs& LookupNetSpecs(std::string Name);
         model::ArithmeticUnits::Specs& LookupArithSpecs(std::string Name);

@@ -7,14 +7,20 @@
 #include "TileExp/mapping/mapping.hpp"
 #include "TileExp/mapping/parser.hpp"
 
+#include "TileExp/mapper/expr.hpp"
+
 
 namespace mapping{
+    
+std::map<std::string, unsigned> LevelName2IdxMap;
 
 namespace TileExp{
 
-// void tolower(std::string& str){
-//     std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {return std::tolower(c);});
-// }
+const problem::TileExp::Workloads* p_workloads_ = nullptr;
+
+void tolower(std::string& str){
+    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {return std::tolower(c);});
+}
 
 const std::unordered_map<Node::type_t, std::string> Node::type2name_ = {
     {Node::Tile, "Tile"},
@@ -105,7 +111,7 @@ TileNode::TileNode(config::CompoundConfigNode config): Node(Node::Tile, config){
     std::unordered_map<std::string, std::pair<int, int> > loop_bounds;
     std::string buffer;
     if (config.lookupValue("factors", buffer)) {
-        loop_bounds = ParseFactors(buffer); // parse loop bound {dim, [low, high]}
+        loop_bounds = ParseFactors(buffer); // parse loop bound {dim, [low, high]}, if factor contains
     }
     else {
         TILEEXP_ERROR("No factors");
@@ -132,10 +138,10 @@ TileNode::TileNode(config::CompoundConfigNode config): Node(Node::Tile, config){
 
     // TBD
     unsigned split = iters.size();
-    config.lookupValue("split", split); // used
+    config.lookupValue("split", split);
     for (int i = (int)iters.size()-1; i >= 0; --i) {
         loopnests_.emplace_back();
-        loop::TileFlow::Descriptor& loop = loopnests_.back();
+        loop::TileExp::Descriptor& loop = loopnests_.back();
         loop.name_ = iters[i];
         loop.dimension = problem::GetShape()->FactorizedDimensionNameToID.at(loop.name_); // 全局的ID
         loop.start = 0;
@@ -183,8 +189,8 @@ OpNode::OpNode(config::CompoundConfigNode config): Node(Node::Op, config) {
 }
 
 TransNode::TransNode(config::CompoundConfigNode config): Node(Node::Trans, config) {
-    // assert(config.lookupValue("name", trans_name_));
-    // name_ += "::" + trans_name_;
+    assert(config.lookupValue("name", trans_name_));
+    name_ += "::" + trans_name_;
 }
 
 

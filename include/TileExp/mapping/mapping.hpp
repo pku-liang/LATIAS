@@ -8,19 +8,22 @@
 #include "TileExp/problem/problem.hpp"
 #include "TileExp/model/graph.hpp"
 
+#include "TileExp/mapper/expr.hpp"
+#include "TileExp/mapping/loop.hpp"
+#include "TileExp/mapper/symbol.hpp"
+
+using Symbol::SymbolTable;
 
 namespace mapping{
 
-std::map<std::string, unsigned> LevelName2IdxMap;
+extern std::map<std::string, unsigned> LevelName2IdxMap;
 
 namespace TileExp{
 
-void tolower(std::string& str){
-std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {return std::tolower(c);});
-}
+void tolower(std::string& str);
 
 typedef std::unordered_map<std::string, std::string> StringMap;
-const problem::TileExp::Workloads* p_workloads_ = nullptr;
+extern const problem::TileExp::Workloads* p_workloads_;
 
 enum dataflow_mode{
     Forward,
@@ -62,13 +65,14 @@ public:
     std::unordered_map<std::string, std::pair<int, int> > ParseFactors(const std::string& buffer);
     std::vector<std::string> ParsePermutations(const std::string & buffer);
     void ParseStorageLevel(config::CompoundConfigNode directive); 
+    void ParseStorageLevel(config::CompoundConfigNode directive, model::Engine::Specs arch_specs); // Ray
 
     // virtual void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const; // TBD
-    
     void add_child(const Node* child);
     void set_parent(const Node* parent) const {parent_ = parent;}
-
+    
 };
+
 
 class TileNode: public Node {
 public:
@@ -78,7 +82,8 @@ public:
     };
 private:
 
-    std::vector<loop::TileExp::Descriptor> loopnests_; // describe current tile node's loop factor
+    // describe current tile node's loop factor -- support var
+    std::vector<loop::TileExp::Descriptor> loopnests_; 
     TileNode::type_t type_;
     bool multicast_enabled_ = true;
     // model::Engine::Specs arch_sepcs_;
@@ -97,13 +102,14 @@ public:
     const std::vector<loop::TileExp::Descriptor>& get_loops() const {return loopnests_;}
 };
 
+
 class TransNode: public Node{
     std::string trans_name_;
     int trans_index_;
 public:
     TransNode(config::CompoundConfigNode config);
     // TBD
-    void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
+    // void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
     // void accept(Visitor* visitor) const {visitor->visitTrans(this);}
     const std::string& get_trans_name() const {return trans_name_;}
     int get_trans_index() const {return trans_index_;}
@@ -118,7 +124,7 @@ public:
         Pipeline
     };
     ScopeNode(config::CompoundConfigNode config);
-    void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
+    // void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
     // void accept(Visitor* visitor) const {visitor->visitScope(this);} // TBD
     ScopeNode::type_t get_scope_type() const {return type;}
 
@@ -133,14 +139,10 @@ class OpNode: public Node {
     // std::shared_ptr<problem::TileFlow::Workload> p_workload;
 public:
     OpNode(config::CompoundConfigNode config);
-    void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
+    // void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
     const std::string & get_name() const {return op_name_;}
     // void accept(Visitor* visitor) const {visitor->visitOp(this);} // TBD
-    const std::shared_ptr<problem::TileFlow::Workload>& get_workload() const {return p_workload;}
-};
-
-class TransNode: public Node{
-    TransNode();
+    // const std::shared_ptr<problem::TileFlow::Workload>& get_workload() const {return p_workload;}
 };
 
 // get mapping tree and fanout XY map

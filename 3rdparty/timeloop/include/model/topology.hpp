@@ -187,7 +187,7 @@ class Topology : public Module
     unsigned StorageMap(unsigned i) const { return storage_map.at(i); }
     unsigned ArithmeticMap() const { return arithmetic_map; }
     unsigned Name2IdxMap(std::string& name) const { return name2idx_map.at(name); };
-    unsigned Idx2NameMap(unsigned name) const { return idx2name_map.at(name); };
+    std::string Idx2NameMap(unsigned name) const { return idx2name_map.at(name); };
 
     std::shared_ptr<LevelSpecs> GetLevel(unsigned level_id) const;
     std::shared_ptr<BufferLevel::Specs> GetStorageLevel(unsigned storage_level_id) const;

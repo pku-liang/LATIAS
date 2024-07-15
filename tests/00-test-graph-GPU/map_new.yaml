@@ -31,6 +31,7 @@ mapping:
           dataflow-mode: Forward
           factors: M=16, N=16, K=16
           permutation: MNK 
+          name: GEMM1
           target: Cube
           binding: M:M, N:N, K:K
 
@@ -48,7 +49,7 @@ mapping:
         subtree: 
         - node-type: Op
           dataflow-mode: Write-back
-          name: GEMM
+          name: EXP
           factors: M=1, N=1
           permutation: MN
           target: Vector

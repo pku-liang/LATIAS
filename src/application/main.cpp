@@ -139,6 +139,7 @@ int main(int argc, char* argv[])
   // note that we do not consider the network specs 
 
   // parse mapping -- input config, graph topology and workloads
+  // build symbol table here
   auto mapping = 
     mapping::TileExp::ParseAndConstruct(root.lookup("mapping"), graph, workloads_instance, arch_specs_); // parse mapping
   

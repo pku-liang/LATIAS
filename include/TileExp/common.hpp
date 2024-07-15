@@ -16,6 +16,8 @@
 
 #include "compound-config/compound-config.hpp"
 
+#include "TileExp/mapper/expr.hpp"
+
 const int MaxTensors = 32;
 
 namespace TileExp {
@@ -24,4 +26,9 @@ extern int verbose_level;
 
 extern config::CompoundConfigNode macros;
 
-}
+// namespace Symbol{
+//     TileExp::SymbolTable global_symbol_table_;
+
+// } // end Symbol
+
+} // end TileExp

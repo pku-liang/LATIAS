@@ -1,7 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
-
+#include <unordered_map>
+#include <regex>
 // std::vector<std::string> parseName2Vec(std::string name) {
 //   std::vector<std::string> res;
 //   auto posStart = name.find("[");
@@ -68,6 +69,36 @@ std::vector<std::string> parseName2Vec(const std::string& name) {
     return names;
 }
 
+std::unordered_map<std::string, std::pair<int, int> > ParseFactors(
+    const std::string& buffer) {
+    std::unordered_map<std::string, std::pair<int, int> > loop_bounds;
+    std::regex re("([A-Za-z]+)[[:space:]]*[=]*[[:space:]]*([0-9A-Za-z_?]+)(,([0-9]+))?", std::regex::extended);
+    std::smatch sm;
+    std::string str = std::string(buffer);
+    str = str.substr(0, str.find("#")); // remove comments
+
+    while (std::regex_search(str, sm, re)) // each time load one []=[]
+    {
+        std::string dimension_name = sm[1];
+
+        int end;
+        char* ptr = nullptr;
+        end = std::strtol(sm[2].str().c_str(), &ptr, 10);
+
+        int residual_end = end;
+        if (sm[4] != "")
+        {
+            residual_end = std::stoi(sm[4]);
+        }
+
+        loop_bounds[dimension_name] = {end, residual_end};
+
+        str = sm.suffix().str();
+    }
+
+    return loop_bounds;
+}
+
 int main(){
     std::string name = "name";
     std::string name2 = "[name1, name2, name3]";
@@ -82,5 +113,11 @@ int main(){
 
     for (auto s : res2){
         std::cout << s << std::endl;
+    }
+
+    std::string factors = "A=4,1, B=3, C=4";
+    auto factor_p = ParseFactors(factors);
+    for(auto& tmp : factor_p){
+        std::cout << "Dim" << tmp.first << ":" << tmp.second.first << "end" << tmp.second.second << std::endl;
     }
 }

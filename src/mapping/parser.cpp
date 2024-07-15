@@ -3,7 +3,7 @@
 #include "mapping/arch-properties.hpp"
 
 #include "TileExp/mapping/mapping.hpp"
-// #include "TileExp/mapper/mapper.hpp"
+#include "TileExp/mapper/expr.hpp"
 
 using TileExp::macros;
 using TileExp::verbose_level;
@@ -31,7 +31,7 @@ ExpMapping ParseAndConstruct(config::CompoundConfigNode config,
     ExpMapping mapping;
     // build mapping tree
     mapping.root = RecursiveParse(config); //
-    mapping.arch_specs_ = arch_specs_;
+    mapping.arch_specs_ = arch_specs;
     // build fanout map -- graph-based
     // mapping.ParseFanoutMap(graph); // TBD
 
@@ -103,10 +103,16 @@ std::unordered_map<std::string, std::pair<int, int> > Node::ParseFactors(
         }
         else {
             char* ptr = nullptr;
-            end = std::strtol(sm[2].str().c_str(), &ptr, 10);
-            if (ptr && *ptr) {
-                end = global_symbol_table_.insert(sm[2]);
+            std::string var = sm[2];
+            if (var.find("X") != std::string::npos || var.find("?") != std::string::npos){
+                end = Symbol::global_symbol_table_.insert(sm[2]);
             }
+            else{
+                end = std::strtol(sm[2].str().c_str(), &ptr, 10); // return var -idx
+            }
+            // if (ptr && *ptr) {
+            //     end = TileExp::global_symbol_table_.insert(sm[2]);
+            // }
         }
 
         int residual_end = end;
@@ -141,7 +147,7 @@ void Node::ParseStorageLevel(config::CompoundConfigNode directive, model::Engine
 {
     auto topology = arch_specs.topology;
     auto num_arith_levels = topology.ArithmeticMap() + 1;
-    auto num_storage_levels = topology.NumLevels() - num_arith_levels;
+    // auto num_storage_levels = topology.NumLevels() - num_arith_levels;
         
     //
     // Find the target storage level. This can be specified as either a name or an ID.
@@ -167,7 +173,7 @@ void Node::ParseStorageLevel(config::CompoundConfigNode directive, model::Engine
     {
         int id;
         assert(directive.lookupValue("target", id));
-        assert(id >= num_arith_levels  && id < int(topology.NumLevels()));
+        assert(id >= int(num_arith_levels)  && id < int(topology.NumLevels()));
         storage_level_id = static_cast<unsigned>(id);
     }
 

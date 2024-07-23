@@ -25,13 +25,13 @@ void tolower(std::string& str);
 typedef std::unordered_map<std::string, std::string> StringMap;
 extern const problem::TileExp::Workloads* p_workloads_;
 
-enum dataflow_mode{
-    Forward,
-    Write_back
-};
 
 class Node {
 public: 
+    enum dataflow_mode{
+        Forward,
+        Write_back
+    };
     enum type_t{
         Tile,
         Op,
@@ -40,7 +40,7 @@ public:
     };
 protected:
     static const std::unordered_map<type_t, std::string> type2name_; 
-    Node::type_t type_;
+    type_t type_;
     std::string name_;
     std::string target_level_name;
     unsigned target_level_id;
@@ -52,6 +52,7 @@ protected:
     bool profile_ = true;
 
     dataflow_mode dataflow_mode_;
+    static const std::unordered_map<std::string, dataflow_mode> name2dataflow_mode_;
 
     // mutable ActiveTensor active_tensors_;
 

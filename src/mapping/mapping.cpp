@@ -29,9 +29,9 @@ const std::unordered_map<Node::type_t, std::string> Node::type2name_ = {
     {Node::Trans, "Trans"}
 };
 
-const std::unordered_map<std::string, dataflow_mode> name2dataflow_mode_ = {
-    {"forward", dataflow_mode::Forward},
-    {"write-back", dataflow_mode::Write_back}
+const std::unordered_map<std::string, Node::dataflow_mode> Node::name2dataflow_mode_ = {
+    {"forward", Node::dataflow_mode::Forward},
+    {"write-back", Node::dataflow_mode::Write_back}
 };
 
 Node::Node(
@@ -48,15 +48,21 @@ Node::Node(
         target_level_id = mapping::LevelName2IdxMap.at(target_level_name);
     }
     else{
-        TILEEXP_ERROR("No target level is specified.");
+        if (name_ == "Scope") { }
+        else{
+            TILEEXP_ERROR("No target level is specified.");
+        }
     }
 
     if (config.exists("bypass")) config.lookupArrayValue("bypass", bypassed_);
     
     // Ray -- add dataflow mode
-    std::string dataflow_mode_s;
-    config.lookupValue("dataflow-mode", dataflow_mode_s);
-    dataflow_mode_ = name2dataflow_mode_.at(dataflow_mode_s);
+    if (name_ != "Scope") {
+        std::string dataflow_mode_s;
+        config.lookupValue("dataflow-mode", dataflow_mode_s);
+        tolower(dataflow_mode_s);
+        dataflow_mode_ = name2dataflow_mode_.at(dataflow_mode_s);
+    }
 
     // may error
     config.lookupValue("profile", profile_);
@@ -93,7 +99,7 @@ ScopeNode::ScopeNode(config::CompoundConfigNode config): Node(Node::Scope, confi
 
 // load tile information from config file
 TileNode::TileNode(config::CompoundConfigNode config): Node(Node::Tile, config){
-    
+
     std::string type_s = "temporal";
     config.lookupValue("type", type_s);
     tolower(type_s);
@@ -189,7 +195,7 @@ OpNode::OpNode(config::CompoundConfigNode config): Node(Node::Op, config) {
 }
 
 TransNode::TransNode(config::CompoundConfigNode config): Node(Node::Trans, config) {
-    assert(config.lookupValue("name", trans_name_));
+    config.lookupValue("name", trans_name_);
     name_ += "::" + trans_name_;
 }
 

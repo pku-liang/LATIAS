@@ -231,7 +231,7 @@ OpNode::OpNode(config::CompoundConfigNode config): Node(Node::Op, config) {
         loop.spacetime_dimension = spacetime::Dimension::Time; 
     }
 
-    // p_workload = p_workloads_->get_workload(op_name_); // TBD
+    p_workload = p_workloads_->get_workload(op_name_); // TBD
     name_ += "::" + op_name_;
 }
 

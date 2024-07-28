@@ -123,7 +123,8 @@ int main(int argc, char* argv[])
 
   // build architecture graph  
   model::TileExp::Graph graph(arch_specs_);
-  if(TileExp::verbose_level) graph.Print();
+  if(TileExp::verbose_level) 
+    graph.Print();
 
   // parse workload -- tileflow mode
   std::cout << "Begin ParseWorkload..." << std::endl;
@@ -144,7 +145,7 @@ int main(int argc, char* argv[])
     mapping::TileExp::ParseAndConstruct(root.lookup("mapping"), graph, workloads_instance, arch_specs_); // parse mapping
   
   if (TileExp::verbose_level)
-    mapping.Print();    
+    mapping.Print();
 
   return 0;
 } 

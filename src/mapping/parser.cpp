@@ -12,6 +12,8 @@ namespace mapping{
 
 namespace TileExp{
 
+// const problem::TileExp::Workloads* p_workloads_ = nullptr;
+
 Node* RecursiveParse(config::CompoundConfigNode config);
 
 ExpMapping ParseAndConstruct(config::CompoundConfigNode config,
@@ -21,21 +23,32 @@ ExpMapping ParseAndConstruct(config::CompoundConfigNode config,
 {
     // arch_props_ = ArchProperties();
     // arch_props_.Construct(arch_specs);
+    // arch_specs_ = arch_specs;
+    // auto arch_specs_ = arch_specs;
 
     p_workloads_ = &workloads;
-    // arch_specs_ = arch_specs;
 
     auto graph_ = graph;
-    // auto arch_specs_ = arch_specs;
 
     ExpMapping mapping;
     // build mapping tree
     mapping.root = RecursiveParse(config); //
     mapping.arch_specs_ = arch_specs;
     // build fanout map -- graph-based
-    // mapping.ParseFanoutMap(graph); // TBD
+    mapping.ParseFanoutMap(graph); // TBD
+
+    // if (TileExp::verbose_level) {
+    //     std::cout << "Mapping tree:" << std::endl;
+    //     mapping.PrintFanoutMap();
+    // }
 
     return mapping;
+}
+
+void ExpMapping::ParseFanoutMap(model::TileExp::Graph& graph){
+    // TBD
+    auto graph_ = graph;
+
 }
 
 Node* RecursiveParse(config::CompoundConfigNode config){

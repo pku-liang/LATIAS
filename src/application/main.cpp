@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
     mapping::TileExp::ParseAndConstruct(root.lookup("mapping"), graph, workloads_instance, arch_specs_); // parse mapping
   
   if (TileExp::verbose_level)
-    mapping.Print();
+    mapping.Print();   
 
   return 0;
 }

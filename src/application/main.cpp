@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
   if (TileExp::verbose_level)  
     workloads_instance.Print();
 
-  if (TileExp::verbose_level)
+  if (TileExp::verbose_level) 
     show_energy(arch_specs_, std::cout);
   
   // note that we do not consider the network specs 

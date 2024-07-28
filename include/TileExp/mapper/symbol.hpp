@@ -42,7 +42,7 @@ namespace Symbol
                 if(!kv.second.fixed_) return false;
             return true;
         }
-        int get_num_variables() const {return -idx;}
+        int get_num_variables() const {return idx;}
         int count_unfixed() const {int ret = idx2values_.size(); for (auto& kv: idx2values_) ret -= kv.second.fixed_; return ret;}
         // int get_next_var() const; // TBD
         // void show_brief(std::ostream& o) const; // TBD
@@ -59,7 +59,7 @@ namespace Symbol
                 }
             }
             if (name2idx_.count(name_) == 0) {
-                idx--;
+                idx++; // start from 1
                 name2idx_[name_] = idx;
                 idx2values_[idx] = {name_, 0, idx, {}, false};
             }

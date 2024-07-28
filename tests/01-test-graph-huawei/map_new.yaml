@@ -10,7 +10,7 @@ mapping:
   - node-type: Tile
     dataflow-mode: Forward
     type: temporal 
-    factors: L=8
+    factors: L=X
     permutation: L 
     target: L1 
 
@@ -22,16 +22,16 @@ mapping:
       - node-type: Tile
         dataflow-mode: Forward
         type: temporal 
-        factors: K=8
+        factors: K=X
         permutation: K 
         target: L0AB
 
         subtree: 
         - node-type: Op
-          dataflow-mode: Forward
-          factors: M=16, N=16, K=16
-          permutation: MNK 
           name: GEMM1
+          dataflow-mode: Forward
+          factors: M=1 N=2 K=3
+          permutation: MNK 
           target: Cube
           binding: M:M, N:N, K:K
 
@@ -42,15 +42,15 @@ mapping:
       - node-type: Tile
         dataflow-mode: Write-back
         type: temporal
-        factors: M=16, N=16
+        factors: M=X N=X
         permutation: MN
         target: L0C
 
         subtree: 
         - node-type: Op
-          dataflow-mode: Write-back
           name: EXP
-          factors: M=1, N=1
+          dataflow-mode: Write-back
+          factors: M=1 N=1
           permutation: MN
           target: Vector
           binding: M:M, N:N

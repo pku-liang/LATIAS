@@ -10,6 +10,8 @@ architecture:
       attributes:
         sizeKB: 1048576
         word-bits: 8
+        read_bandwidth: 4
+        write_bandwidth: 4
         successor: L1, UB
         alignments: 0
         layout: ND
@@ -48,7 +50,7 @@ architecture:
         word-bits: 16 
         meshX: 4
         meshY: 4
-        compute_cycles: 2
+        compute_cycles: 1
         successor: L0C
         layout: ND
 

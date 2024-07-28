@@ -65,6 +65,7 @@ elif "HDF5PATH_INCLUDE" in os.environ:
     env["LIBS"] += ['hdf5_cpp', 'hdf5_hl_cpp', 'hdf5_serial', 'hdf5_serial_hl']
 
 if "YAMLCPPPATH" in os.environ:
+# if "LIBCONFIGPATH" in os.environ:
     YAMLCPPPATH = os.environ["YAMLCPPPATH"]
     env["LIBPATH"] += [YAMLCPPPATH + '/lib']
     env["CPPFLAGS"] += ['-I' + YAMLCPPPATH + '/include']

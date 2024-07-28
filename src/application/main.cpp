@@ -143,6 +143,8 @@ int main(int argc, char* argv[])
   auto mapping = 
     mapping::TileExp::ParseAndConstruct(root.lookup("mapping"), graph, workloads_instance, arch_specs_); // parse mapping
   
+  if (TileExp::verbose_level)
+    mapping.Print();
 
   return 0;
 }

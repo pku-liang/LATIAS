@@ -59,8 +59,12 @@ protected:
 public:
     Node(type_t, config::CompoundConfigNode config);
 
-    unsigned get_storage_level() { return storage_level_; };
-    std::string get_storage_name() { return storage_level_name_; };
+    unsigned get_storage_level() const { return storage_level_; };
+    std::string get_storage_name() const { return storage_level_name_; };
+    std::string get_name() const { return name_; };
+    std::string get_target_level_name() const { return target_level_name; };
+    std::vector<const Node*> get_children() const { return children_; };
+    type_t get_type() const { return type_; };
 
     // parser --  loop bounds {name, [low, high]}
     std::unordered_map<std::string, std::pair<int, int> > ParseFactors(const std::string& buffer);
@@ -71,6 +75,8 @@ public:
     // virtual void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const; // TBD
     void add_child(const Node* child);
     void set_parent(const Node* parent) const {parent_ = parent;}
+
+    void Print() const;
     
 };
 
@@ -155,18 +161,17 @@ struct ExpMapping: public Mapping{
     model::Engine::Specs arch_specs_;
 
     // function 
-
     ExpMapping(){};
    
     // Parse
     void ParseFanoutMap(model::TileExp::Graph& arch_specs); // parse fanout map to ExpFanoutXMap and ExpFanoutYMap
 
     // Get
-    // std::map<std::string, StringMap> GetFanoutXMap() const { return ExpFanoutXMap; }
-    // std::map<std::string, StringMap> GetFanoutYMap() const { return ExpFanoutYMap; }
+    std::map<std::string, StringMap> GetFanoutXMap() const { return ExpFanoutXMap; }
+    std::map<std::string, StringMap> GetFanoutYMap() const { return ExpFanoutYMap; }
 
     // Print
-    void Print();
+    void Print() const;
 };
 
 

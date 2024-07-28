@@ -117,7 +117,7 @@ TileNode::TileNode(config::CompoundConfigNode config): Node(Node::Tile, config){
     std::unordered_map<std::string, std::pair<int, int> > loop_bounds;
     std::string buffer;
     if (config.lookupValue("factors", buffer)) {
-        loop_bounds = ParseFactors(buffer); // parse loop bound {dim, [low, high]}, if factor contains
+        loop_bounds = ParseFactors(buffer); // parse loop bound {dim, [bounds, residual_bounds]}, if factor contains
     }
     else {
         TILEEXP_ERROR("No factors");
@@ -189,14 +189,43 @@ loop::Nest TileNode::constructLoopNest(const SymbolTable* symbol_table_) const{
 
 
 OpNode::OpNode(config::CompoundConfigNode config): Node(Node::Op, config) {
+    
     assert(config.lookupValue("name", op_name_));
+    
+    // add loop boundary
+    std::unordered_map<std::string, std::pair<int, int> > loop_bounds;
+    std::string buffer;
+
+    int symbol_num = Symbol::global_symbol_table_.get_num_variables();
+    if (config.lookupValue("factors", buffer)) {
+        loop_bounds = ParseFactors(buffer); // parse loop bound {dim, [low, high]}, if factor contains
+    }
+    else {
+        TILEEXP_ERROR("No factors");
+    }
+    TILEEXP_ASSERT(symbol_num == Symbol::global_symbol_table_.get_num_variables(), "Symbol num mismatch, Op Node must declare all factors");
+
+    // add permutation
+    std::vector<std::string> iters;
+    if (config.lookupValue("permutation", buffer)) {
+        iters = ParsePermutations(buffer);
+    }
+    else {
+        for (auto& kv: loop_bounds) iters.push_back(kv.first);
+        TILEEXP_WARNING("No permutation specified. Infer instead."); // permutation from factors
+    }
+    
+    TILEEXP_ASSERT(iters.size() == loop_bounds.size(), "permutation " << buffer << " & factor iter mismatch");
+
+    // TBD Need add loop nest analysis
+
     // p_workload = p_workloads_->get_workload(op_name_); // TBD
     name_ += "::" + op_name_;
 }
 
 TransNode::TransNode(config::CompoundConfigNode config): Node(Node::Trans, config) {
     config.lookupValue("name", trans_name_);
-    name_ += "::" + trans_name_;
+    // name_ += "::" + trans_name_;
 }
 
 
@@ -229,6 +258,30 @@ void Node::add_child(const Node* child){
     children_.push_back(child); 
     child->set_parent(this);
 }
+
+void Node::Print() const {
+    if (get_type() == Node::Scope) {
+        std::cout << "Target Mem Level: No (Scope)" <<
+                     " , Node type: " << get_name() << std::endl;
+    }
+    else {
+        std::cout << "Target Mem Level: " << get_target_level_name() << 
+                 " , Node type: " << get_name() << std::endl;
+    }
+    for (auto child: children_) {
+        child->Print();
+    }
+}
+
+void ExpMapping::Print() const {
+    auto root_ = root;
+    std::cout << "Target Mem Level: " << root_->get_target_level_name() << 
+                 " , Node type: " << root_->get_name() << std::endl;
+    for (auto child: root_->get_children()) {
+        child->Print();
+    }
+}
+
 
 } // namespace TileExp
 

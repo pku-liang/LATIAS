@@ -39,6 +39,7 @@ public:
         Trans // TBD
     };
 protected:
+    std::vector<loop::TileExp::Descriptor> loopnests_; 
     static const std::unordered_map<type_t, std::string> type2name_; 
     type_t type_;
     std::string name_;
@@ -53,6 +54,7 @@ protected:
 
     dataflow_mode dataflow_mode_;
     static const std::unordered_map<std::string, dataflow_mode> name2dataflow_mode_;
+    
 
     // mutable ActiveTensor active_tensors_;
 
@@ -65,6 +67,7 @@ public:
     std::string get_target_level_name() const { return target_level_name; };
     std::vector<const Node*> get_children() const { return children_; };
     type_t get_type() const { return type_; };
+    std::vector<loop::TileExp::Descriptor> get_loops() const {return loopnests_;}
 
     // parser --  loop bounds {name, [low, high]}
     std::unordered_map<std::string, std::pair<int, int> > ParseFactors(const std::string& buffer);
@@ -90,7 +93,7 @@ public:
 private:
 
     // describe current tile node's loop factor -- support var
-    std::vector<loop::TileExp::Descriptor> loopnests_; 
+    // std::vector<loop::TileExp::Descriptor> loopnests_; 
     TileNode::type_t type_;
     bool multicast_enabled_ = true;
     // model::Engine::Specs arch_sepcs_;
@@ -106,7 +109,7 @@ public:
     
     loop::Nest constructLoopNest(const SymbolTable* symbol_table = nullptr) const; // TBD
     size_t n_level() const {return loopnests_.size();}
-    const std::vector<loop::TileExp::Descriptor>& get_loops() const {return loopnests_;}
+    // const std::vector<loop::TileExp::Descriptor>& get_loops() const {return loopnests_;}
 };
 
 
@@ -141,8 +144,9 @@ private:
 };
 
 class OpNode: public Node {
+    // std::vector<loop::TileExp::Descriptor> loopnests_; 
     std::string op_name_;
-    int op_index_;
+    int op_index_; // useless
     // std::shared_ptr<problem::TileFlow::Workload> p_workload;
 public:
     OpNode(config::CompoundConfigNode config);

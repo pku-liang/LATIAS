@@ -142,7 +142,6 @@ TileNode::TileNode(config::CompoundConfigNode config): Node(Node::Tile, config){
         config.lookupValue("multicast", multicast_enabled_);
     }
 
-    // TBD
     unsigned split = iters.size();
     config.lookupValue("split", split);
     for (int i = (int)iters.size()-1; i >= 0; --i) {
@@ -155,8 +154,8 @@ TileNode::TileNode(config::CompoundConfigNode config): Node(Node::Tile, config){
         loop.residual_end = loop_bounds[iters[i]].second;
         loop.stride = 1;
         loop.spacetime_dimension = type_s == "spatial"? 
-        ((unsigned)i < split? spacetime::Dimension::SpaceX : spacetime::Dimension::SpaceY) 
-        : spacetime::Dimension::Time; 
+            ((unsigned)i < split? spacetime::Dimension::SpaceX : spacetime::Dimension::SpaceY) 
+            : spacetime::Dimension::Time; 
     }
     
     name_ += type_ == Temporal? "::Temporal" : "::Spatial"; 
@@ -217,7 +216,20 @@ OpNode::OpNode(config::CompoundConfigNode config): Node(Node::Op, config) {
     
     TILEEXP_ASSERT(iters.size() == loop_bounds.size(), "permutation " << buffer << " & factor iter mismatch");
 
-    // TBD Need add loop nest analysis
+    // TBD Need add loop nest analysis -- Done
+    unsigned split = iters.size();
+    config.lookupValue("split", split);
+    for (int i = (int)iters.size()-1; i >= 0; --i) {
+        loopnests_.emplace_back();
+        loop::TileExp::Descriptor& loop = loopnests_.back();
+        loop.name_ = iters[i];
+        loop.dimension = problem::GetShape()->FactorizedDimensionNameToID.at(loop.name_); // 全局的ID
+        loop.start = 0;
+        loop.end = loop_bounds[iters[i]].first;
+        loop.residual_end = loop_bounds[iters[i]].second;
+        loop.stride = 1;
+        loop.spacetime_dimension = spacetime::Dimension::Time; 
+    }
 
     // p_workload = p_workloads_->get_workload(op_name_); // TBD
     name_ += "::" + op_name_;
@@ -231,7 +243,6 @@ TransNode::TransNode(config::CompoundConfigNode config): Node(Node::Trans, confi
 
 void Node::add_child(const Node* child){
     // if (type_ == Node::Scope) {
-        
     //     unsigned storage_level;
     //     std::string storage_level_name = "Unknown";
     //     if (child->get_type() == Node::Tile) {
@@ -262,11 +273,19 @@ void Node::add_child(const Node* child){
 void Node::Print() const {
     if (get_type() == Node::Scope) {
         std::cout << "Target Mem Level: No (Scope)" <<
-                     " , Node type: " << get_name() << std::endl;
+                     ", Node type: " << get_name() << std::endl;
     }
     else {
-        std::cout << "Target Mem Level: " << get_target_level_name() << 
-                 " , Node type: " << get_name() << std::endl;
+        if (get_type() == Node::Trans) 
+            std::cout << "Target Mem Level: " << get_target_level_name() << ", Node type: " << get_name() << std::endl;
+        else{
+            std::cout << "Target Mem Level: " << get_target_level_name() << ", Node type: " << get_name();
+            std::cout << ", Loop Nest:";
+            for (auto loop: loopnests_) {
+                std::cout << " " << loop.name_ << "[" << loop.start << ", " << loop.end << "(" << loop.residual_end << "), " << loop.stride << "]";
+            }   
+            std::cout << std::endl;
+        }
     }
     for (auto child: children_) {
         child->Print();
@@ -274,12 +293,16 @@ void Node::Print() const {
 }
 
 void ExpMapping::Print() const {
+    std::cout << "========Mapping Tree========" << std::endl;
     auto root_ = root;
-    std::cout << "Target Mem Level: " << root_->get_target_level_name() << 
-                 " , Node type: " << root_->get_name() << std::endl;
-    for (auto child: root_->get_children()) {
-        child->Print();
-    }
+    root_->Print();
+    // std::cout << "Target Mem Level: " << root_->get_target_level_name() << 
+                //  " , Node type: " << root_->get_name() << std::endl;
+    // for (auto child: root_->get_children()) {
+    //     child->Print();
+    // }
+    std::cout << "======End Mapping Tree=======" << std::endl;
+
 }
 
 

@@ -118,7 +118,7 @@ std::unordered_map<std::string, std::pair<int, int> > Node::ParseFactors(
         int residual_end = end;
         if (sm[4] != "")
         {
-            char* ptr = nullptr;
+            // char* ptr = nullptr;
             std::string var = sm[4];
             if (var.find("X") != std::string::npos || var.find("?") != std::string::npos){
                 residual_end = Symbol::global_symbol_table_.insert(sm[4]);

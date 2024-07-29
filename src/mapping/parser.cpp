@@ -4,6 +4,7 @@
 
 #include "TileExp/mapping/mapping.hpp"
 #include "TileExp/mapper/expr.hpp"
+// #include "TileExp/model/graph.hpp"
 
 using TileExp::macros;
 using TileExp::verbose_level;
@@ -45,9 +46,49 @@ ExpMapping ParseAndConstruct(config::CompoundConfigNode config,
     return mapping;
 }
 
+MeshXYPair ExpMapping::GetNodeMeshXY(std::shared_ptr<model::TileExp::GraphNode> ptr_node_,
+                                     std::string type_){
+    // auto type_ = mapping::LevelName2TypeMap.at(name_);
+    // std::shared_ptr<GraphNode> ptr_graph_node = GraphNodeList[Name];
+    std::shared_ptr<model::Level> ptr_level_node = ptr_node_->GetNode();
+    if (type_ == "BufferLevel"){
+        auto ptr_buffer_node = std::static_pointer_cast<model::BufferLevel>(ptr_level_node);
+        model::BufferLevel::Specs& buffer_specs = ptr_buffer_node->GetSpecs(); 
+        return MeshXYPair(buffer_specs.meshX.Get(), buffer_specs.meshY.Get());
+    }
+    else if (type_ == "ArithmeticUnits")
+    {
+        auto ptr_arith_node = std::static_pointer_cast<model::ArithmeticUnits>(ptr_level_node);
+        model::ArithmeticUnits::Specs& arith_specs = ptr_arith_node->GetSpecs(); 
+        return MeshXYPair(arith_specs.meshX.Get(), arith_specs.meshY.Get());
+    }
+    else{
+        TILEEXP_ERROR("Error: Unrecognized node type: " + type_);
+    }
+    
+    return MeshXYPair(0, 0);
+}
+
 void ExpMapping::ParseFanoutMap(model::TileExp::Graph& graph){
     // TBD
     auto graph_ = graph;
+    // auto current_node_ = graph.GetRoot();
+    auto graph_list_ = graph.GetGraphList();
+    auto graph_node_list_ = graph.GetGraphNodeList();
+
+    for (auto& node_pair_: graph_list_){
+        std::string current_name_ = node_pair_.first;
+        auto current_node_ = graph_node_list_.at(current_name_);
+        auto type_ = current_node_->GetType();
+        MeshXYPair current_meshXY_ = GetNodeMeshXY(current_node_, type_);
+        auto x = current_meshXY_.first;
+        if(x){};
+        for (std::string& next_name_: node_pair_.second){
+            
+            std::cout << "current_node_ = " << current_name_ << " next_node_ = " << next_name_ << std::endl;
+        }
+    }
+        // auto level_ = mapping::LevelName2IdxMap.at(current_node_);
 
 }
 

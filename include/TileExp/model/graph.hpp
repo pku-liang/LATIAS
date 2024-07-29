@@ -88,7 +88,9 @@ class Graph: public model::Topology {
         unsigned GetNodeCount();
         std::map<std::string, unsigned> GetTopologyName2IdxMap() { return TopologyName2Id; };
         std::map<unsigned, std::string> GetTopologyIdx2NameMap() { return TopologyId2Name; };
-        
+        std::unordered_map<std::string, std::shared_ptr<GraphNode>> GetGraphNodeList() { return GraphNodeList; };
+        std::unordered_map<std::string, std::vector<std::string>> GetGraphList() { return GraphList; };
+
         // look up specs by name
         model::BufferLevel::Specs& LookupBufferSpecs(std::string Name);
         model::LegacyNetwork::Specs& LookupNetSpecs(std::string Name);

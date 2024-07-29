@@ -13,6 +13,7 @@
 namespace mapping{
     
 std::map<std::string, unsigned> LevelName2IdxMap;
+std::map<std::string, std::string> LevelName2TypeMap;
 
 namespace TileExp{
 

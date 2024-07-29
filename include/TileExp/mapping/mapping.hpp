@@ -17,12 +17,16 @@ using Symbol::SymbolTable;
 namespace mapping{
 
 extern std::map<std::string, unsigned> LevelName2IdxMap;
+extern std::map<std::string, std::string> LevelName2TypeMap;
 
 namespace TileExp{
 
 void tolower(std::string& str);
 
 typedef std::unordered_map<std::string, std::string> StringMap;
+typedef std::pair<unsigned, unsigned> MeshXYPair;
+typedef std::map<std::string, MeshXYPair> TargetMeshXYMap; // fanout relatioship
+typedef std::map<std::string, TargetMeshXYMap> ExpFanoutXYMap; // arch level XY
 
 extern const problem::TileExp::Workloads* p_workloads_;
 
@@ -158,11 +162,10 @@ public:
 // get mapping tree and fanout XY map
 struct ExpMapping: public Mapping{
 
-    typedef std::pair<unsigned, unsigned> MeshXYPair;
-    typedef std::map<std::string, MeshXYPair> TargetMeshXYMap; // fanout relatioship
-    typedef std::map<std::string, TargetMeshPair> ExpFanoutXYMap; // arch level XY
-
-    std::map<std::string, MeshXYPair> ArchLevelNumMap; // arch level num -- first get arch level map (mesh XY), then build ExpFanoutXYMap
+    // MeshXYPair MeshXYPair_;
+    // TargetMeshXYMap TargetMeshXYMap_; // fanout relatioship
+    ExpFanoutXYMap ExpFanoutXYMap_; // arch level XY
+    // ArchLevelNumMap ArchLevelNumMap_; // arch level num -- first get arch level map (mesh XY), then build ExpFanoutXYMap
     // std::map<std::string, std::vector<std::string>> FanoutRelationMap; // fanout relatioship
     // std::map<std::string, std::pair<std::string, unsigned>> ArchLevelXYMap; // arch level XY
     // std::map<std::string, std::vector<std::string>> ExpFanoutYMap;
@@ -175,9 +178,11 @@ struct ExpMapping: public Mapping{
    
     // Parse
     void ParseFanoutMap(model::TileExp::Graph& arch_specs); // parse fanout map to ExpFanoutXMap and ExpFanoutYMap
+    MeshXYPair GetNodeMeshXY(std::shared_ptr<model::TileExp::GraphNode> ptr_node_,
+                                        std::string type_);
 
     // Get
-    std::map<std::string, std::vector<std::string>> GetFanoutRelationMap() const { return FanoutRelationMap; }
+    ExpFanoutXYMap GetFanoutXYMap() const { return ExpFanoutXYMap_; };
     // std::map<std::string, StringMap> GetFanoutYMap() const { return ExpFanoutYMap; }
 
     // Print

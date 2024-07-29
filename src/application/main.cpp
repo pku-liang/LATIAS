@@ -81,6 +81,10 @@ int main(int argc, char* argv[])
   // node information hide in model::Engine::Specs::topology
   model::Engine::Specs arch_specs_ = model::Engine::ParseSpecs(arch, is_sparse_topology); // only for sepc.topology
   mapping::LevelName2IdxMap = arch_specs_.topology.GetName2IdxMap();
+  mapping::LevelName2TypeMap = arch_specs_.topology.GetLevelName2TypeMap();
+  
+
+  // std::cout << mapping::LevelName2IdxMap.at("MainMemory") << std::endl;
 
   if (root.exists("ERT")) // we don't consider this
   {
@@ -141,11 +145,11 @@ int main(int argc, char* argv[])
 
   // parse mapping -- input config, graph topology and workloads
   // build symbol table here
-  auto mapping = 
+  auto mapping_ = 
     mapping::TileExp::ParseAndConstruct(root.lookup("mapping"), graph, workloads_instance, arch_specs_); // parse mapping
   
   if (TileExp::verbose_level)
-    mapping.Print();
+    mapping_.Print();
 
   return 0;
 } 

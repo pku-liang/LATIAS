@@ -993,6 +993,7 @@ Topology::Specs Topology::ParseTreeSpecs(config::CompoundConfigNode designRoot, 
         {
           // Create a buffer spec.
           auto level_specs_p = std::make_shared<BufferLevel::Specs>(BufferLevel::ParseSpecs(curLocal[c], nElements, is_sparse_topology)); // 这里需要修改，添加新加入的属性
+          specs.AddName2TypeMap(cName, "BufferLevel");
           localStorages.push_back(level_specs_p); // 存放具体内存信息
 
           // Create an inferred network spec.
@@ -1008,6 +1009,7 @@ Topology::Specs Topology::ParseTreeSpecs(config::CompoundConfigNode designRoot, 
           // origin
           // specs.AddLevel(0, std::static_pointer_cast<LevelSpecs>(level_specs_p));
           // Ray
+          specs.AddName2TypeMap(cName, "ArithmeticUnits");
           localStorages.push_back(level_specs_p);
           ArithCount += 1;
           // std::cout << "Arithmetic level: " << cName << std::endl;

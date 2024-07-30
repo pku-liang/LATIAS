@@ -24,7 +24,7 @@ namespace TileExp{
 void tolower(std::string& str);
 
 typedef std::unordered_map<std::string, std::string> StringMap;
-typedef std::pair<unsigned, unsigned> MeshXYPair;
+typedef std::pair<float, float> MeshXYPair;
 typedef std::map<std::string, MeshXYPair> TargetMeshXYMap; // fanout relatioship
 typedef std::map<std::string, TargetMeshXYMap> ExpFanoutXYMap; // arch level XY
 

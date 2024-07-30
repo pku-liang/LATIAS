@@ -508,6 +508,7 @@ BufferLevel::Specs BufferLevel::ParseSpecs(config::CompoundConfigNode level, std
       meshX = std::stoi(_tmp);
       specs.meshX = meshX;
     }
+    else specs.meshX = 1;
   }
 
   // MeshY.
@@ -520,6 +521,7 @@ BufferLevel::Specs BufferLevel::ParseSpecs(config::CompoundConfigNode level, std
       meshY = std::stoi(_tmp);
       specs.meshY = meshY;
     }
+    else specs.meshY = 1;
   }
 
   // Network names;

@@ -241,6 +241,20 @@ TransNode::TransNode(config::CompoundConfigNode config): Node(Node::Trans, confi
     // name_ += "::" + trans_name_;
 }
 
+void ExpMapping::PrintFanoutMap() const{
+    std::cout << "=======Fanout Map======" << std::endl;
+    for (auto& current_: ExpFanoutXYMap_) {
+        std::string current_name = current_.first;
+        for (auto& next_: current_.second){
+            std::string next_name = next_.first;
+            auto fanoutX_ = next_.second.first;
+            auto fanoutY_ = next_.second.second;
+            std::cout << current_name << " -> " << next_name << " : " << fanoutX_ << ", " << fanoutY_ << std::endl;
+        }
+    }
+    std::cout << "=======End Fanout Map======" << std::endl;
+}
+
 
 void Node::add_child(const Node* child){
     // if (type_ == Node::Scope) {

@@ -44,12 +44,12 @@ architecture:
         alignments: 0
         layout: ND
     
-    - name: Cube[0..15] 
+    - name: Cube[0..31] 
       class: intmac 
       attributes: 
         word-bits: 16 
         meshX: 4
-        meshY: 4
+        meshY: 8
         compute_cycles: 1
         successor: L0C
         layout: ND
@@ -57,8 +57,8 @@ architecture:
     - name: L0C[0..15] 
       class: SRAM 
       attributes:
-        meshX: 4 
-        meshY: 4
+        meshX: 2
+        meshY: 8
         depth: 64 
         block_size: 1024
         word-bits: 8
@@ -68,12 +68,12 @@ architecture:
         alignments: 0
         layout: ND
 
-    - name: Vector[0..15] 
+    - name: Vector[0..31] 
       class: intmac 
       attributes: 
         word-bits: 16 
-        meshX: 4
-        meshY: 4
+        meshX: 2
+        meshY: 16
         compute_cycles: 2
         successor: MainMemory, L0C
         layout: ND
@@ -81,8 +81,8 @@ architecture:
     - name: UB[0..15] 
       class: SRAM 
       attributes:
-        meshX: 4 
-        meshY: 4
+        meshX: 2
+        meshY: 8
         depth: 64 
         block_size: 1024
         word-bits: 8

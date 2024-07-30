@@ -38,10 +38,7 @@ ExpMapping ParseAndConstruct(config::CompoundConfigNode config,
     // build fanout map -- graph-based
     mapping.ParseFanoutMap(graph); // TBD
 
-    // if (TileExp::verbose_level) {
-    //     std::cout << "Mapping tree:" << std::endl;
-    //     mapping.PrintFanoutMap();
-    // }
+    mapping.PrintFanoutMap();
 
     return mapping;
 }
@@ -54,19 +51,40 @@ MeshXYPair ExpMapping::GetNodeMeshXY(std::shared_ptr<model::TileExp::GraphNode> 
     if (type_ == "BufferLevel"){
         auto ptr_buffer_node = std::static_pointer_cast<model::BufferLevel>(ptr_level_node);
         model::BufferLevel::Specs& buffer_specs = ptr_buffer_node->GetSpecs(); 
-        return MeshXYPair(buffer_specs.meshX.Get(), buffer_specs.meshY.Get());
+        if (buffer_specs.technology.Get() == model::BufferLevel::Technology::DRAM){
+            return MeshXYPair(0.0, 0.0); // for DRAM
+        }
+        return MeshXYPair(float(buffer_specs.meshX.Get()), float(buffer_specs.meshY.Get()));
     }
     else if (type_ == "ArithmeticUnits")
     {
         auto ptr_arith_node = std::static_pointer_cast<model::ArithmeticUnits>(ptr_level_node);
         model::ArithmeticUnits::Specs& arith_specs = ptr_arith_node->GetSpecs(); 
-        return MeshXYPair(arith_specs.meshX.Get(), arith_specs.meshY.Get());
+        return MeshXYPair(float(arith_specs.meshX.Get()), float(arith_specs.meshY.Get()));
     }
     else{
         TILEEXP_ERROR("Error: Unrecognized node type: " + type_);
     }
     
-    return MeshXYPair(0, 0);
+    // return MeshXYPair(0, 0);
+}
+
+bool CheckFanoutLegal(MeshXYPair current_meshXY, MeshXYPair next_meshXY){
+    if (unsigned(current_meshXY.first) % unsigned(next_meshXY.first) == 0 ||    
+        unsigned(next_meshXY.first) % unsigned(current_meshXY.first) == 0){}
+    else return false;
+
+    if (unsigned(current_meshXY.second) % unsigned(next_meshXY.second) == 0 ||    
+        unsigned(next_meshXY.second) % unsigned(current_meshXY.second) == 0){}
+    else return false;
+
+    if (next_meshXY.first / current_meshXY.first <= 1 && 
+        next_meshXY.second / current_meshXY.second <= 1){}
+    else if (next_meshXY.first / current_meshXY.first >= 1 && 
+             next_meshXY.second / current_meshXY.second >= 1){}
+    else return false;
+
+    return true;
 }
 
 void ExpMapping::ParseFanoutMap(model::TileExp::Graph& graph){
@@ -79,14 +97,31 @@ void ExpMapping::ParseFanoutMap(model::TileExp::Graph& graph){
     for (auto& node_pair_: graph_list_){
         std::string current_name_ = node_pair_.first;
         auto current_node_ = graph_node_list_.at(current_name_);
-        auto type_ = current_node_->GetType();
-        MeshXYPair current_meshXY_ = GetNodeMeshXY(current_node_, type_);
-        auto x = current_meshXY_.first;
-        if(x){};
-        for (std::string& next_name_: node_pair_.second){
-            
-            std::cout << "current_node_ = " << current_name_ << " next_node_ = " << next_name_ << std::endl;
+        auto current_type_ = current_node_->GetType();
+        MeshXYPair current_meshXY_ = GetNodeMeshXY(current_node_, current_type_);
+        if (current_meshXY_ == MeshXYPair(0.0, 0.0)){
+            current_meshXY_ = MeshXYPair(1.0, 1.0); // for DRAM
         }
+        // auto x = current_meshXY_.first;
+        // if(x){};
+        TargetMeshXYMap TargetMeshXYMap_;
+        for (std::string& next_name_: node_pair_.second){
+            auto next_node_ = graph_node_list_.at(next_name_);
+            auto next_type_ = next_node_->GetType();
+            MeshXYPair next_meshXY_ = GetNodeMeshXY(next_node_, next_type_);
+            if (next_meshXY_ == MeshXYPair(0.0, 0.0)){
+                next_meshXY_ = current_meshXY_; // for DRAM
+            }
+
+            // bool in_out_X_ = next_meshXY_.first / current_meshXY_.first < 1; 
+            TILEEXP_ASSERT(CheckFanoutLegal(current_meshXY_, next_meshXY_), 
+                        "Error: Fanout of " + current_name_ + " to " + next_name_ + " is illegal");
+            MeshXYPair FanoutXY = MeshXYPair(next_meshXY_.first / current_meshXY_.first, 
+                                             next_meshXY_.second / current_meshXY_.second);
+            TargetMeshXYMap_[next_name_] = FanoutXY;
+            // std::cout << "current_node_ = " << current_name_ << " next_node_ = " << next_name_ << std::endl;
+        }
+        ExpFanoutXYMap_[current_name_] = TargetMeshXYMap_;
     }
         // auto level_ = mapping::LevelName2IdxMap.at(current_node_);
 

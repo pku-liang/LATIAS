@@ -43,7 +43,7 @@ class Shape
   typedef unsigned FactorizedDimensionID;
   
   unsigned NumFactorizedDimensions = 0;
-  std::map<FactorizedDimensionID, std::string> FactorizedDimensionIDToName; // dimensions: [M,L,K] --> {[0, M], [1, L], [2, K]}
+  std::map<FactorizedDimensionID, std::string> FactorizedDimensionIDToName; // local dimensions: [M,L,K] --> {[0, M], [1, L], [2, K]} -- local dimension
   std::map<std::string, FactorizedDimensionID> FactorizedDimensionNameToID;
 
   typedef unsigned FlattenedDimensionID;
@@ -69,7 +69,7 @@ class Shape
   unsigned NumDataSpaces = 0;
   std::map<std::string, DataSpaceID> DataSpaceNameToID;
   std::map<DataSpaceID, std::string> DataSpaceIDToName;
-  std::map<DataSpaceID, unsigned> DataSpaceOrder;
+  std::map<DataSpaceID, unsigned> DataSpaceOrder; // 表示当前data space中的每一个张量的维度个数
   std::map<DataSpaceID, bool> IsReadWriteDataSpace;
 
   // Projection AST: the projection function for each dataspace dimension is a
@@ -86,9 +86,9 @@ class Shape
   // *ordered* list of all problem dimensions that flatten into each flattened
   // dimension. During parsing we also need to make sure that each problem
   // dimension is flattened into at most one flattened dimension.
-  std::vector<Projection> Projections;
+  std::vector<Projection> Projections; // 依次存放当前op中每一个tensor的projection的内容，其中projection的内容是一系列的projection term，每个projection term是由一个coefficient和一个dim_id组成的
 
-  std::vector<std::set<FlattenedDimensionID>> DataSpaceIDToDimensionIDVector;
+  std::vector<std::set<FlattenedDimensionID>> DataSpaceIDToDimensionIDVector; // 说明当前op的各个data space(tensor)所使用到的dim
 
  public: 
   void Parse(config::CompoundConfigNode config);

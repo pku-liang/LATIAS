@@ -14,10 +14,10 @@ namespace TileExp {
     class Workloads;
 
     class Workload: public problem::Workload {
-        std::vector<std::string> ins_;
+        std::vector<std::string> ins_; // Input tensor
         std::string out_;
         std::string name_;  
-        Workloads& workloads_; // 用处？
+        Workloads& workloads_;
         bool binding_applied = false;
     public: 
         Workload(Workloads& workloads): workloads_(workloads){}

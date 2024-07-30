@@ -190,7 +190,7 @@ void Shape::Parse(config::CompoundConfigNode shape)
       for (int k = 0; k < projection_cfg.getLength(); k++)
       {
         // Process one data-space dimension.
-        ProjectionExpression expression;
+        ProjectionExpression expression; // list with pair.
         DataSpaceIDToDimensionIDVector.push_back({});
         auto dimension = projection_cfg[k];
         // Each expression is a list of terms. Each term can be
@@ -207,7 +207,7 @@ void Shape::Parse(config::CompoundConfigNode shape)
             const std::string& dim_name = nameAndCoeff[0];
             auto& dim_id = FactorizedDimensionNameToID.at(dim_name); // 映射当前变量维度和当前ops的维度的关系
             expression.push_back({ NumCoefficients, dim_id });
-            DataSpaceIDToDimensionIDVector[NumDataSpaces].insert(FactorizedToFlattened.at(dim_id)); // flatten 无关，暂时不管
+            DataSpaceIDToDimensionIDVector[NumDataSpaces].insert(FactorizedToFlattened.at(dim_id)); // 等同于插入dim_id
           }
           else if (term.getLength() == 2)
           {

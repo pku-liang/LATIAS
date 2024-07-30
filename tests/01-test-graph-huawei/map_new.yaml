@@ -22,7 +22,7 @@ mapping:
       - node-type: Tile
         dataflow-mode: Forward
         type: temporal 
-        factors: K=X
+        factors: K=X,X
         permutation: K 
         target: L0AB
 

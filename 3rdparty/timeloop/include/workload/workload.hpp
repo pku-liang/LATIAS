@@ -73,7 +73,7 @@ class Workload
   Densities densities_;
   bool workload_tensor_size_set_ = false;
   bool default_dense_ = true;
-  Shape shape_;
+  Shape shape_; // store all the tensor information of one operation
   int wid;
 
   // For making sure only one Workload is alive at a time

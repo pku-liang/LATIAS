@@ -177,7 +177,7 @@ Node* RecursiveParse(config::CompoundConfigNode config){
 std::unordered_map<std::string, std::pair<int, int> > Node::ParseFactors(
     const std::string& buffer) {
     std::unordered_map<std::string, std::pair<int, int> > loop_bounds;
-    std::regex re("([A-Za-z]+)[[:space:]]*[=]*[[:space:]]*([0-9A-Za-z_?]+)(,([0-9]+))?", std::regex::extended);
+    std::regex re("([A-Za-z]+)[[:space:]]*[=]*[[:space:]]*([0-9A-Za-z_?]+)(,([0-9A-Za-z_?]+))?", std::regex::extended);
     std::smatch sm;
     std::string str = std::string(buffer);
     str = str.substr(0, str.find("#")); // remove comments

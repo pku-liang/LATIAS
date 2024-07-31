@@ -144,12 +144,19 @@ int main(int argc, char* argv[])
   // note that we do not consider the network specs 
 
   // parse mapping -- input config, graph topology and workloads
-  // build symbol table here
   auto mapping_ = 
     mapping::TileExp::ParseAndConstruct(root.lookup("mapping"), graph, workloads_instance, arch_specs_); // parse mapping
   
   if (TileExp::verbose_level)
     mapping_.Print();
+
+  bool enable_mem_check_ = true;
+  bool enable_spatial_check_ = true;
+  bool enable_loopcount_check_ = true;
+  bool enable_operation_check_ = true;
+
+  // check
+  TileExp::Checker checker;
 
   return 0;
 } 

@@ -10,7 +10,7 @@ mapping:
   - node-type: Tile
     dataflow-mode: Forward
     type: temporal 
-    factors: L=X
+    factors: L=8
     permutation: L 
     target: L1 
 
@@ -22,7 +22,7 @@ mapping:
       - node-type: Tile
         dataflow-mode: Forward
         type: temporal 
-        factors: K=X,X
+        factors: K=4,4
         permutation: K 
         target: L0AB
 
@@ -42,7 +42,7 @@ mapping:
       - node-type: Tile
         dataflow-mode: Write-back
         type: temporal
-        factors: M=X N=X
+        factors: M=4 N=4
         permutation: MN
         target: L0C
 

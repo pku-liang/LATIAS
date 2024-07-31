@@ -30,6 +30,24 @@ typedef std::map<std::string, TargetMeshXYMap> ExpFanoutXYMap; // arch level XY
 
 extern const problem::TileExp::Workloads* p_workloads_;
 
+class Visitor {
+protected:
+    virtual void visitScope(const ScopeNode*);
+    virtual void visitTile(const TileNode*);
+    virtual void visitOp(const OpNode*);
+    virtual void visitTrans(const TransNode*);
+    friend class TileNode;
+    friend class ScopeNode;
+    friend class OpNode;
+    friend class TransNode;
+public:
+    virtual void run (const Node*);
+};
+
+struct ActiveTensor {
+    std::set<problem::Shape::DataSpaceID> 
+    read_tensors, fill_tensors, update_tensors, wb_tensors;
+};
 
 class Node {
 public: 
@@ -59,7 +77,6 @@ protected:
 
     dataflow_mode dataflow_mode_;
     static const std::unordered_map<std::string, dataflow_mode> name2dataflow_mode_;
-    
 
     // mutable ActiveTensor active_tensors_;
 

@@ -39,9 +39,9 @@ namespace TileExp {
         config::CompoundConfigNode coeffs_;
 
         problem::Workload::FactorizedBounds factorized_bounds_; // loop factorized
-        problem::Workload::FlattenedBounds flattened_bounds_; // loop flatten (unsure)
+        problem::Workload::FlattenedBounds flattened_bounds_; // loop flatten
         problem::Workload::Coefficients coefficients_; // other problem input param
-        problem::Workload::Densities densities_; // 先不管
+        problem::Workload::Densities densities_; // do not use
         problem::Shape common_shape_;
 
         mutable problem::Workload workload_;

@@ -30,31 +30,31 @@ mapping:
         - node-type: Op
           name: GEMM1
           dataflow-mode: Forward
-          factors: M=1 N=2 K=3
-          permutation: MNK 
+          factors: M=16 L=16 K=16
+          permutation: MLK 
           target: Cube
-          binding: M:M, N:N, K:K
+          binding: M:M, L:L, K:K
 
-      - node-type: Trans
-        dataflow-mode: Forward
-        target: L0C
+        - node-type: Trans
+          dataflow-mode: Forward
+          target: L0C
 
       - node-type: Tile
         dataflow-mode: Write-back
         type: temporal
-        factors: M=4 N=4
-        permutation: MN
+        factors: M=4 L=4
+        permutation: ML
         target: L0C
 
         subtree: 
         - node-type: Op
           name: EXP
           dataflow-mode: Write-back
-          factors: M=1 N=1
-          permutation: MN
+          factors: M=16 L=8
+          permutation: ML
           target: Vector
-          binding: M:M, N:N
+          binding: M:M, L:L
 
-      - node-type: Trans
-        dataflow-mode: Forward
-        target: MainMemory
+        - node-type: Trans
+          dataflow-mode: Forward
+          target: MainMemory

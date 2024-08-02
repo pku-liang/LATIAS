@@ -9,8 +9,10 @@
 #include "TileExp/model/graph.hpp"
 
 #include "TileExp/mapper/expr.hpp"
-#include "TileExp/mapping/loop.hpp"
 #include "TileExp/mapper/symbol.hpp"
+#include "TileExp/mapping/loop.hpp"
+// #include "TileExp/mapping/mapping.hpp"
+
 
 using Symbol::SymbolTable;
 
@@ -24,11 +26,19 @@ namespace TileExp{
 void tolower(std::string& str);
 
 typedef std::unordered_map<std::string, std::string> StringMap;
-typedef std::pair<float, float> MeshXYPair;
-typedef std::map<std::string, MeshXYPair> TargetMeshXYMap; // fanout relatioship
-typedef std::map<std::string, TargetMeshXYMap> ExpFanoutXYMap; // arch level XY
+typedef std::pair<float, float> MeshXYPair; // [meshX, meshY]
+typedef std::map<std::string, MeshXYPair> TargetMeshXYMap; // fanout relatioship [target, meshXY]
+typedef std::map<std::string, TargetMeshXYMap> ExpFanoutXYMap; // arch level XY [current, target]
 
 extern const problem::TileExp::Workloads* p_workloads_;
+
+
+class Node;
+class ScopeNode;
+class TileNode;
+class OpNode;
+class TransNode;
+struct ExpMapping;
 
 class Visitor {
 protected:
@@ -91,7 +101,7 @@ public:
     type_t get_type() const { return type_; };
     std::vector<loop::TileExp::Descriptor> get_loops() const {return loopnests_;}
 
-    // parser --  loop bounds {name, [low, high]}
+    // parser --  loop bounds {name, [bound, residual bound]}
     std::unordered_map<std::string, std::pair<int, int> > ParseFactors(const std::string& buffer);
     std::vector<std::string> ParsePermutations(const std::string & buffer);
     void ParseStorageLevel(config::CompoundConfigNode directive); 
@@ -102,7 +112,9 @@ public:
     void set_parent(const Node* parent) const {parent_ = parent;}
 
     void Print() const;
-    
+
+    virtual void accept(Visitor* visitor) const = 0;
+    friend class Visitor;
 };
 
 
@@ -123,7 +135,7 @@ public:
     TileNode(config::CompoundConfigNode config);
     // void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, // TBD 
     //         std::ostream& = std::cout) const override;
-    // void accept(Visitor* visitor) const {visitor->visitTile(this);} // TBD
+    void accept(Visitor* visitor) const {visitor->visitTile(this);}
     bool is_spatial() const {return type_ == Spatial;}
     bool is_multicast_enabled() const {return multicast_enabled_;}
     TileNode::type_t get_tile_type() const {return type_;}
@@ -141,7 +153,7 @@ public:
     TransNode(config::CompoundConfigNode config);
     // TBD
     // void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
-    // void accept(Visitor* visitor) const {visitor->visitTrans(this);}
+    void accept(Visitor* visitor) const {visitor->visitTrans(this);}
     const std::string& get_trans_name() const {return trans_name_;}
     int get_trans_index() const {return trans_index_;}
 };
@@ -156,7 +168,7 @@ public:
     };
     ScopeNode(config::CompoundConfigNode config);
     // void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
-    // void accept(Visitor* visitor) const {visitor->visitScope(this);} // TBD
+    void accept(Visitor* visitor) const {visitor->visitScope(this);}
     ScopeNode::type_t get_scope_type() const {return type;}
 
 private: 
@@ -172,36 +184,25 @@ public:
     OpNode(config::CompoundConfigNode config);
     // void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
     const std::string & get_name() const {return op_name_;}
-    // void accept(Visitor* visitor) const {visitor->visitOp(this);} // TBD
+    void accept(Visitor* visitor) const {visitor->visitOp(this);}
     const std::shared_ptr<problem::TileExp::Workload>& get_workload() const {return p_workload;}
 };
 
 // get mapping tree and fanout XY map
 struct ExpMapping: public Mapping{
 
-    // MeshXYPair MeshXYPair_;
-    // TargetMeshXYMap TargetMeshXYMap_; // fanout relatioship
     ExpFanoutXYMap ExpFanoutXYMap_; // arch level XY
-    // ArchLevelNumMap ArchLevelNumMap_; // arch level num -- first get arch level map (mesh XY), then build ExpFanoutXYMap
-    // std::map<std::string, std::vector<std::string>> FanoutRelationMap; // fanout relatioship
-    // std::map<std::string, std::pair<std::string, unsigned>> ArchLevelXYMap; // arch level XY
-    // std::map<std::string, std::vector<std::string>> ExpFanoutYMap;
-
     Node* root;
     model::Engine::Specs arch_specs_;
 
     // function 
     ExpMapping(){};
-   
     // Parse
     void ParseFanoutMap(model::TileExp::Graph& arch_specs); // parse fanout map to ExpFanoutXMap and ExpFanoutYMap
     MeshXYPair GetNodeMeshXY(std::shared_ptr<model::TileExp::GraphNode> ptr_node_,
                                         std::string type_);
-
     // Get
     ExpFanoutXYMap GetFanoutXYMap() const { return ExpFanoutXYMap_; };
-    // std::map<std::string, StringMap> GetFanoutYMap() const { return ExpFanoutYMap; }
-
     // Print
     void Print() const;
     void PrintFanoutMap() const;

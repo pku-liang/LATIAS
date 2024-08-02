@@ -14,6 +14,7 @@
 #include "./TileExp/problem/problem.hpp"
 #include "./TileExp/mapping/mapping.hpp"
 #include "./TileExp/mapping/parser.hpp"
+#include "./TileExp/mapper/checker.hpp"
 
 
 void show_energy(
@@ -152,11 +153,15 @@ int main(int argc, char* argv[])
 
   bool enable_mem_check_ = true;
   bool enable_spatial_check_ = true;
-  bool enable_loopcount_check_ = true;
   bool enable_operation_check_ = true;
+  // here we do not consider the loop count check since there might be some variables in our mapping
+  bool enable_loopcount_check_ = false; 
 
   // check
-  TileExp::Checker checker;
+  TileExp::Check::Checker checker(workloads_instance, mapping_, graph,  
+    enable_mem_check_, enable_spatial_check_, enable_loopcount_check_, enable_operation_check_);
+
+  // checker.Check();
 
   return 0;
 } 

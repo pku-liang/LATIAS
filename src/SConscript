@@ -115,6 +115,7 @@ lib_sources = Split("""
 ./problem/parser.cpp
 ./model/graph.cpp
 ./common.cpp
+./mapper/checker.cpp
 """)
 
 libenv = env.Clone()

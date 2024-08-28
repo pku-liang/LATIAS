@@ -60,7 +60,7 @@ Node::Node(
     // Ray -- add dataflow mode
     if (name_ != "Scope") {
         std::string dataflow_mode_s;
-        config.lookupValue("dataflow-mode", dataflow_mode_s);
+        TILEEXP_ASSERT(config.lookupValue("dataflow-mode", dataflow_mode_s), "Current Node: " + name_ + " does not have dataflow mode.");
         tolower(dataflow_mode_s);
         dataflow_mode_ = name2dataflow_mode_.at(dataflow_mode_s);
     }
@@ -254,6 +254,31 @@ void ExpMapping::PrintFanoutMap() const{
     }
     std::cout << "=======End Fanout Map======" << std::endl;
 }
+
+void Visitor::run(const Node* root){
+    root->accept(this);
+}
+
+void Visitor::visitScope(const ScopeNode* node){
+    for (auto child: node->children_) 
+        child->accept(this);
+}
+
+void Visitor::visitOp(const OpNode* node){
+    for (auto child: node->children_) 
+        child->accept(this);
+}
+
+void Visitor::visitTile(const TileNode* node){
+    for (auto child: node->children_) 
+        child->accept(this);
+}
+
+void Visitor::visitTrans(const TransNode* node){
+    for (auto child: node->children_) 
+        child->accept(this);
+}
+
 
 
 void Node::add_child(const Node* child){

@@ -1,0 +1,47 @@
+mapping:
+  node-type: Tile 
+  type: temporal 
+  factors: M=64 L=32 
+  permutation: ML 
+  target: MainMemory 
+  
+  subtree: 
+  - node-type: Scope 
+    type: Pipeline 
+    
+    subtree: 
+      - node-type: Tile 
+        type: temporal 
+        factors: M=2 L=4 
+        split: 1
+        permutation: ML 
+        target: MainMemory
+        
+        subtree: 
+        - node-type: Tile 
+          type: spatial  
+          factors: M=4 L=4 K=64
+          permutation: MLK 
+          target: RegFile
+          
+          subtree:
+          - node-type: Op
+            name: GEMM1 
+            binding: M:M L:L K:K 
+
+
+# for m_o in [0, 4]: # in DRAM
+#  for n_o in [0, 4]: # in DRAM
+#   #### parent node ####
+#   for k_o in [0, 4]: # in regfile
+#    #### child node 1 ####
+#    for m_in in [0, 16]: # in Compute
+#     for n_in in [0, 16]: # in Compute
+#       for k_in in [0, 16]: # in Compute
+#        C[m_o*16+m_in, n_o*16+n_in] += 
+#         A[m_o*16+m_in, k_o*16+k_in] * 
+#         B[k_o*16+k_in, n_o*16+n_in]
+#    #### child node 2 #### 
+#    for m_in in [0, 16]: # in Compute
+#      for n_in in [0, 16]: # in Compute
+#        EXP_C[m_o*16+m_in, n_o*16+n_in] += exp(C[m_o*16+m_in, n_o*16+n_in])

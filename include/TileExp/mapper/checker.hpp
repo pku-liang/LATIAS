@@ -46,28 +46,32 @@ class Checker{
         enable_loopcount_check_(enable_loopcount_check),
         enable_operation_check_(enable_operation_check){}
     
+    void check_memory_resource_constraint() const;
+    
     ~Checker(){}
 
-    void check() const {}
+    void check() const;
 
 };
 
 // rule1: memory resource constraint -- bottom-top
 // in paper, different level has different memory resource -- consider TransNode
 class MemoryResourceConstraint: public Visitor{
+    private:
     std::map<std::string, unsigned> mem_map_; // store all the memory resource
     std::map<std::string, unsigned> current_mem_map_; // store current usable mem resource
     const model::TileExp::Graph& graph_;
 
-    void visitTile(const TileNode*) override;
-    void visitScope(const ScopeNode*) override;
-    void visitOp(const OpNode*) override; 
-    void visitTrans(const TransNode*) override;
+    public:
+    // void visitTile(const TileNode*) override;
+    // void visitScope(const ScopeNode*) override;
+    // void visitOp(const OpNode*) override; 
+    // void visitTrans(const TransNode*) override;
 
     // parse memory map from graph
-    void ParseMemoryMap(model::TileExp::Graph& graph);
+    void ParseMemoryMap();
 
-    void run(const Node*) override;
+    MemoryResourceConstraint(const model::TileExp::Graph& graph): graph_(graph){}
 };
 
 // rule2: resource constraint -- ensure that spatial tile is not too large
@@ -93,7 +97,7 @@ class LoopCountConstraint: public Visitor{
 // rule5: computing units type -- operation type
 class ComputingUnitsConstraint: public Visitor{
     void visitOp(const OpNode*) override;
-}
+};
 
 } // namespace Checker
 } // namespace TileExp

@@ -48,7 +48,7 @@ class Descriptor
   problem::Shape::FlattenedDimensionID dimension;
   int start;
   int end;
-  int residual_end; // end - stride * (end - start)
+  int residual_end; // for the last iteration of all its parent loop, the end will become residual_end
   int stride;
   spacetime::Dimension spacetime_dimension;
 

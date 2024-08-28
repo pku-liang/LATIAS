@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
   }
 
   auto problem = root.lookup("problem");
-  problem::TileExp::Workloads workloads_instance;
+  problem::TileExp::Workloads workloads_instance_;
 
   bool is_sparse_topology = root.exists("sparse_optimizations"); // we don't consider this
 
@@ -127,17 +127,17 @@ int main(int argc, char* argv[])
   // // ***** end test ***** //
 
   // build architecture graph  
-  model::TileExp::Graph graph(arch_specs_);
+  model::TileExp::Graph graph_(arch_specs_);
   if(TileExp::verbose_level) 
-    graph.Print();
+    graph_.Print();
 
   // parse workload -- tileflow mode
   std::cout << "Begin ParseWorkload..." << std::endl;
-  problem::TileExp::ParseWorkloads(problem, workloads_instance); // analysis prob yaml
-  problem::Workload::SetCurrShape(&workloads_instance.get_shape()); // set problem namespace --> current_shape_
+  problem::TileExp::ParseWorkloads(problem, workloads_instance_); // analysis prob yaml
+  problem::Workload::SetCurrShape(&workloads_instance_.get_shape()); // set problem namespace --> current_shape_
 
   if (TileExp::verbose_level)  
-    workloads_instance.Print();
+    workloads_instance_.Print();
 
   if (TileExp::verbose_level) 
     show_energy(arch_specs_, std::cout);
@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
 
   // parse mapping -- input config, graph topology and workloads
   auto mapping_ = 
-    mapping::TileExp::ParseAndConstruct(root.lookup("mapping"), graph, workloads_instance, arch_specs_); // parse mapping
+    mapping::TileExp::ParseAndConstruct(root.lookup("mapping"), graph_, workloads_instance_, arch_specs_); // parse mapping
   
   if (TileExp::verbose_level)
     mapping_.Print();
@@ -158,10 +158,12 @@ int main(int argc, char* argv[])
   bool enable_loopcount_check_ = false; 
 
   // check
-  TileExp::Check::Checker checker(workloads_instance, mapping_, graph,  
+  TileExp::Check::Checker checker_(workloads_instance_, mapping_, graph_,  
     enable_mem_check_, enable_spatial_check_, enable_loopcount_check_, enable_operation_check_);
 
-  // checker.Check();
+  checker_.check();
+
+  // evaluate data movement, latency and energy consumption
 
   return 0;
 } 

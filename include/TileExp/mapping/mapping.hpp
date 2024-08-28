@@ -15,6 +15,8 @@
 
 
 using Symbol::SymbolTable;
+using TileExp::Range;
+using TileExp::TensorMap; 
 
 namespace mapping{
 
@@ -29,6 +31,8 @@ typedef std::unordered_map<std::string, std::string> StringMap;
 typedef std::pair<float, float> MeshXYPair; // [meshX, meshY]
 typedef std::map<std::string, MeshXYPair> TargetMeshXYMap; // fanout relatioship [target, meshXY]
 typedef std::map<std::string, TargetMeshXYMap> ExpFanoutXYMap; // arch level XY [current, target]
+
+typedef std::string DimName;
 
 extern const problem::TileExp::Workloads* p_workloads_;
 
@@ -51,7 +55,7 @@ protected:
     friend class OpNode;
     friend class TransNode;
 public:
-    virtual void run (const Node*);
+    virtual void run (const Node* root);
 };
 
 struct ActiveTensor {
@@ -69,21 +73,24 @@ public:
         Tile,
         Op,
         Scope,
-        Trans // TBD
+        Trans
     };
 protected:
-    std::vector<loop::TileExp::Descriptor> loopnests_; 
-    static const std::unordered_map<type_t, std::string> type2name_; 
     type_t type_;
+    bool profile_ = true;
     std::string name_;
     std::string target_level_name;
+    static const std::unordered_map<type_t, std::string> type2name_; 
     unsigned target_level_id;
-    mutable const Node* parent_ = nullptr;
+    std::vector<loop::TileExp::Descriptor> loopnests_; 
     std::vector<const Node*> children_;
+    std::vector<std::string> bypassed_; // decide whether to bypass this node
+    // state for calculate data movement and latency
+    std::vector<std::vector<loop::TileExp::Descriptor>> inherit_loopnests_; // inherit from the parent nodes
+    std::pair<std::vector<TensorMap>, std::vector<TensorMap> > in_out_tensors_;
+    mutable const Node* parent_ = nullptr;
     mutable std::string storage_level_name_;
     mutable unsigned storage_level_ = unsigned(-1);
-    std::vector<std::string> bypassed_; // decide whether to bypass this node
-    bool profile_ = true;
 
     dataflow_mode dataflow_mode_;
     static const std::unordered_map<std::string, dataflow_mode> name2dataflow_mode_;

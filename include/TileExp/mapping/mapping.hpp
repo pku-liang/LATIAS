@@ -25,6 +25,13 @@ extern std::map<std::string, std::string> LevelName2TypeMap;
 
 namespace TileExp{
 
+enum ScopeType {
+    Sequential,
+    Parallel,
+    Sharing,
+    Pipeline
+};
+
 void tolower(std::string& str);
 
 typedef std::unordered_map<std::string, std::string> StringMap;
@@ -55,7 +62,7 @@ protected:
     friend class OpNode;
     friend class TransNode;
 public:
-    virtual void run (const Node* root);
+    virtual void run (const Node*);
 };
 
 struct ActiveTensor {
@@ -75,8 +82,9 @@ public:
         Scope,
         Trans
     };
-protected:
+public:
     type_t type_;
+    ScopeType scope_type_; // declare the scope type
     bool profile_ = true;
     std::string name_;
     std::string target_level_name;
@@ -94,6 +102,7 @@ protected:
 
     dataflow_mode dataflow_mode_;
     static const std::unordered_map<std::string, dataflow_mode> name2dataflow_mode_;
+
 
     // mutable ActiveTensor active_tensors_;
 
@@ -122,6 +131,7 @@ public:
 
     virtual void accept(Visitor* visitor) const = 0;
     friend class Visitor;
+
 };
 
 
@@ -167,19 +177,21 @@ public:
 
 class ScopeNode: public Node {
 public:
-    enum type_t {
-        Sequential,
-        Sharing,
-        Parallel,
-        Pipeline
-    };
+    // enum type_t {
+    //     Sequential,
+    //     Sharing,
+    //     Parallel,
+    //     Pipeline
+    // };
     ScopeNode(config::CompoundConfigNode config);
     // void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const override;
     void accept(Visitor* visitor) const {visitor->visitScope(this);}
-    ScopeNode::type_t get_scope_type() const {return type;}
+    // ScopeNode::type_t get_scope_type() const {return type;}
+    ScopeType get_scope_type() const {return type;}
 
 private: 
-    ScopeNode::type_t type;
+    ScopeType type;
+    // ScopeNode::type_t type;
     
 };
 

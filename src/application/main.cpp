@@ -15,6 +15,7 @@
 #include "./TileExp/mapping/mapping.hpp"
 #include "./TileExp/mapping/parser.hpp"
 #include "./TileExp/mapper/checker.hpp"
+#include "./TileExp/loop-analysis/analysis.hpp"
 
 
 void show_energy(
@@ -151,19 +152,22 @@ int main(int argc, char* argv[])
   if (TileExp::verbose_level)
     mapping_.Print();
 
-  bool enable_mem_check_ = true;
-  bool enable_spatial_check_ = true;
-  bool enable_operation_check_ = true;
-  // here we do not consider the loop count check since there might be some variables in our mapping
-  bool enable_loopcount_check_ = false; 
+  // bool enable_mem_check_ = true;
+  // bool enable_spatial_check_ = true;
+  // bool enable_operation_check_ = true;
+  // // here we do not consider the loop count check since there might be some variables in our mapping
+  // bool enable_loopcount_check_ = false; 
 
   // check
-  TileExp::Check::Checker checker_(workloads_instance_, mapping_, graph_,  
-    enable_mem_check_, enable_spatial_check_, enable_loopcount_check_, enable_operation_check_);
+  // TileExp::Check::Checker checker_(workloads_instance_, mapping_, graph_,  
+  //   enable_mem_check_, enable_spatial_check_, enable_loopcount_check_, enable_operation_check_);
 
-  checker_.check();
+  // checker_.check();
 
   // evaluate data movement, latency and energy consumption
+  TileExp::Analysis::Evaluator evaluator_(workloads_instance_, mapping_, graph_, arch_specs_);
+
+  evaluator_.reset();
 
   return 0;
 } 

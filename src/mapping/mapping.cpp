@@ -79,19 +79,19 @@ ScopeNode::ScopeNode(config::CompoundConfigNode config): Node(Node::Scope, confi
     config.lookupValue("type", type_s);
     tolower(type_s);
     if (type_s.find("seq") != std::string::npos) {
-        type = Sequential;
+        type = ScopeType::Sequential;
         name_ += "::Sequential";
     }
     else if (type_s.find("para") != std::string::npos) {
-        type = Parallel;
+        type = ScopeType::Parallel;
         name_ += "::Parallel";
     }
     else if (type_s.find("pipe") != std::string::npos) {
-        type = Pipeline;
+        type = ScopeType::Pipeline;
         name_ += "::Pipeline";
     }
     else if (type_s.find("shar") != std::string::npos) {
-        type = Sharing;
+        type = ScopeType::Sharing;
         name_ += "::Sharing";
     }
     else {TILEEXP_ERROR("ScopeNode type error. Should has type sequential/parallel");}

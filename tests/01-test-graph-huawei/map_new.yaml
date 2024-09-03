@@ -40,7 +40,7 @@ mapping:
           target: L0C
 
       - node-type: Tile
-        dataflow-mode: Write-back
+        dataflow-mode: Forward
         type: temporal
         factors: M=4 L=4
         permutation: ML

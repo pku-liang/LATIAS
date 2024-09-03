@@ -31,7 +31,7 @@ namespace TileExp {
             std::vector<tensor_bound> low_bound, 
             std::vector<tensor_bound> high_bound): 
             dims_(dims), low_bound_(low_bound), high_bound_(high_bound) {}
-    }
+    };
 
     struct TensorMap{
         std::string tensor_name_;
@@ -42,8 +42,7 @@ namespace TileExp {
         std::vector<std::string> tensor_dims,
         std::vector<Range> tensor_ranges):
         tensor_name_(tensor_name), tensor_dims_(tensor_dims), tensor_ranges_(tensor_ranges) {}
-    }
-    
+    };
 
 
     // struct Constraint {

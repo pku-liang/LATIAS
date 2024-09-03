@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
   // evaluate data movement, latency and energy consumption
   TileExp::Analysis::Evaluator evaluator_(workloads_instance_, mapping_, graph_, arch_specs_);
 
-  evaluator_.reset();
+  evaluator_.evaluate();
 
   return 0;
 } 

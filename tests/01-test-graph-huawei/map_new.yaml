@@ -50,7 +50,7 @@ mapping:
         - node-type: Op
           name: EXP
           dataflow-mode: Write-back
-          factors: M=16 L=8
+          factors: M=16 L=16
           permutation: ML
           target: Vector
           # binding: M:M, L:L
@@ -58,3 +58,5 @@ mapping:
       - node-type: Trans
         dataflow-mode: Forward
         target: MainMemory
+
+

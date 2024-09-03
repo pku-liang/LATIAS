@@ -67,6 +67,7 @@ namespace TileExp {
         const std::vector<std::string>& get_outs() const {return outs_;}
         const problem::Workload& get_workload() const;
         const problem::Shape& get_shape() const {return common_shape_;}
+        const problem::Workload::FactorizedBounds get_factorized_bounds() const {return factorized_bounds_;}
 
         friend class Workload;
     };

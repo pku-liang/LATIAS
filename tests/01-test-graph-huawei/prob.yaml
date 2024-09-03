@@ -63,4 +63,4 @@ problem:
   #       - [[L]]
   #       - [[N]]
   #   ins: exp, D
-  #   out: E 
+  #   out: E xs

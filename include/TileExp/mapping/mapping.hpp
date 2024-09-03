@@ -94,8 +94,8 @@ public:
     std::vector<const Node*> children_;
     std::vector<std::string> bypassed_; // decide whether to bypass this node
     // state for calculate data movement and latency
-    std::vector<std::vector<loop::TileExp::Descriptor>> inherit_loopnests_; // inherit from the parent nodes
-    std::pair<std::vector<TensorMap>, std::vector<TensorMap> > in_out_tensors_;
+    // std::vector<std::vector<loop::TileExp::Descriptor>> inherit_loopnests_; // inherit from the parent nodes
+    // std::pair<std::vector<TensorMap>, std::vector<TensorMap> > in_out_tensors_;
     mutable const Node* parent_ = nullptr;
     mutable std::string storage_level_name_;
     mutable unsigned storage_level_ = unsigned(-1);

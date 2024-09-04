@@ -148,7 +148,7 @@ std::map<std::string, int32_t> GetLoopCount::get_loop_count(
                 else { tem_result *= dim_ends[dim.first][j]; }
             }
             dim_results[dim.first] += tem_result;
-        }
+        } 
     }
     return dim_results;
 }

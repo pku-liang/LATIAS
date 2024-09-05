@@ -28,8 +28,7 @@ architecture:
         write_bandwidth: 2
         successor: L0AB
         alignments: 0
-        layout: ND
-    
+      
     - name: L0AB[0..15] 
       class: SRAM 
       attributes:

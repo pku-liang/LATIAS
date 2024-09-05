@@ -22,7 +22,7 @@ mapping:
       - node-type: Tile
         dataflow-mode: Forward
         type: temporal 
-        factors: M=4, L=4, K=4 # A[4*M, 4*K], B[4*K,4*L]
+        factors: M=4, L=4, K=8,8 # A[4*M, 4*K], B[4*K,4*L]
         permutation: MLK 
         target: L0AB
 
@@ -30,7 +30,7 @@ mapping:
         - node-type: Op
           name: GEMM1
           dataflow-mode: Forward
-          factors: M=16 L=16 K=16 # A[M,K], B[K,L] --> C[M,L]
+          factors: M=16 L=16,14 K=16,15 # A[M,K], B[K,L] --> C[M,L]
           permutation: MLK 
           target: Cube
           # binding: M:M, L:L, K:K
@@ -50,13 +50,13 @@ mapping:
         - node-type: Op
           name: EXP
           dataflow-mode: Write-back
-          factors: M=16 L=16
+          factors: M=16 L=16,14 
           permutation: ML
           target: Vector
           # binding: M:M, L:L
 
-      - node-type: Trans
-        dataflow-mode: Forward
-        target: MainMemory
+        - node-type: Trans
+          dataflow-mode: Forward
+          target: MainMemory
 
 

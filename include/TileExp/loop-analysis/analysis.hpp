@@ -6,6 +6,7 @@
 #include "TileExp/problem/problem.hpp"
 #include "TileExp/mapping/mapping.hpp"
 #include "TileExp/model/graph.hpp"
+#include "TileExp/mapper/expr.hpp"
 
 using mapping::TileExp::Visitor;
 using mapping::TileExp::Node;
@@ -14,9 +15,34 @@ using mapping::TileExp::TileNode;
 using mapping::TileExp::ScopeNode;
 using mapping::TileExp::TransNode;
 
+using TileExp::DimRange;
+
 namespace TileExp{
 
 namespace Analysis{
+
+class SingleMemLevel{
+    public:
+    std::uint64_t max_word_num_; // block_size
+    std::uint64_t word_bit_width_;
+    // current exist tensors
+    std::vector<TensorMap> stable_tensors_;
+    std::vector<TensorMap> unstable_tensors_;
+}
+
+// DFS arch tree
+class MemLevel{ // for spatial level
+    public:
+    std::string name_;
+    std::uint64_t meshX_;
+    std::uint64_t meshY_;
+    double read_bandwidth_;
+    double write_bandwidth_;
+    const model::BufferLevel::Specs& ori_level_specs_;
+
+    std::vector<std::vector<SingleMemLevel> > mem_level_; // instance array
+
+}
 
 class EvaNode{
     public:
@@ -26,6 +52,7 @@ class EvaNode{
     std::pair<std::vector<TensorMap>, std::vector<TensorMap> > in_out_tensors_;
     mutable EvaNode* parent_ = nullptr;
     std::vector<EvaNode*> children_;
+    bool analysis_fine_gran_ = true;
     
     public:
     EvaNode(const Node* node): ori_node_(node){
@@ -60,6 +87,12 @@ class Evaluator{
     EvaNode* eva_root_;
     const Node* root_;
 
+    std::vector<MemLevel> mem_levels_;
+
+    std::uint64_t data_movements_ = 0; // bits
+    double latency_ = 0.0;
+    double energy_ = 0.0;
+
     Evaluator(const problem::TileExp::Workloads& workloads,
         const mapping::TileExp::ExpMapping& mapping, // tree-based mapping
         const model::TileExp::Graph& graph, 
@@ -73,9 +106,9 @@ class Evaluator{
                 new_child->set_parent(eva_root_);
                 eva_root_->add_child(new_child);
             }
-            std::cout << "**** EvaNode ****" <<std::endl;
-            eva_root_->Print();
-            std::cout << "**** End EvaNode ****" <<std::endl;
+            // std::cout << "**** EvaNode ****" <<std::endl;
+            // eva_root_->Print();
+            // std::cout << "**** End EvaNode ****" <<std::endl;
         }
 
     void reset(){
@@ -87,10 +120,16 @@ class Evaluator{
 
     void evaluate();
 
+    // parse loop info for each EvaNode
     void get_loop_count();
 
+    // parse memory info for each memory level
+    void get_mem_info();
 
-    friend class ResetFunc;
+    // analysis data movement, latency
+    void analysis();
+
+    // friend class ResetFunc;
     // void evaluate_loop_count() const;
     // void evaluate_spatial_tile_size() const;
     // void evaluate_operation_type() const;
@@ -114,6 +153,19 @@ class GetLoopCount: public Visitor{
     void IsPrint(bool is_print){ is_print_ = is_print; }
     std::map<std::string, int32_t> get_loop_count(std::vector<std::vector<loop::TileExp::Descriptor>> input_loopnests);
 };
+
+class GetMemInfo: public Visitor{
+    public:
+    Evaluator& evaluator_;
+    bool is_print_ = true;
+    void visitScope(const ScopeNode* node) override;
+    void visitTile(const TileNode* node) override;
+    void visitOp(const OpNode* node) override;
+    void visitTrans(const TransNode* node) override;
+    void run(const Node* root) override;
+    friend class Evaluator;
+    GetMemInfo(Evaluator& evaluator): evaluator_(evaluator){}
+}
 
 } // namespace Analysis
 } // namespace TileExp

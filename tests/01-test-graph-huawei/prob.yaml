@@ -6,8 +6,8 @@ problem:
   instance:
     M: 512
     N: 64
-    K: 64
-    L: 512
+    K: 127
+    L: 510
 
   ops:
   - name: GEMM1

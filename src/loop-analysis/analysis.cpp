@@ -40,8 +40,12 @@ void EvaNode::Print() const {
 }
 
 void Evaluator::evaluate(){
+    std::cout << "======== Evaluate ========" <<std::endl;
     reset();
     get_loop_count();
+    get_mem_info();
+    analysis();
+    std::cout << "======== End Evaluate ========" <<std::endl;
 }
 
 void Evaluator::get_loop_count(){
@@ -90,25 +94,34 @@ void GetLoopCount::visitOp(const OpNode* node){
     TILEEXP_ASSERT(node->get_children().size() == 0, "Op node should not have child");
     // check if the loop nest is legal
     auto common_shape = evaluator_.workloads_.get_shape();
-    std::cout << "common_shape.FactorizedDimensionIDToName: " << std::endl;
-    for (auto& tmp: common_shape.FactorizedDimensionIDToName){
-        std::cout << tmp.first << " " << tmp.second << std::endl;
-    }
     auto factorized_bounds = evaluator_.workloads_.get_factorized_bounds();
-    std::cout << "factorized_bounds: " << std::endl;
-    for (auto& tmp: factorized_bounds){
-        std::cout << tmp.first << " " << tmp.second << std::endl;
-    }
+    // std::cout << "common_shape.FactorizedDimensionIDToName: " << std::endl;
+    // for (auto& tmp: common_shape.FactorizedDimensionIDToName){
+    //     std::cout << tmp.first << " " << tmp.second << std::endl;
+    // }
+    // std::cout << "factorized_bounds: " << std::endl;
+    // for (auto& tmp: factorized_bounds){
+    //     std::cout << tmp.first << " " << tmp.second << std::endl;
+    // }
 
     auto mapping_loop_results = get_loop_count(current_node_->get_inherit_loopnest());
     for (auto& tmp: mapping_loop_results){
         auto dim_name = tmp.first;
         auto dim_id = common_shape.FactorizedDimensionNameToID[dim_name];
         TILEEXP_ASSERT(factorized_bounds[dim_id] == tmp.second, 
-            "Dim " + dim_name + " is not equal to the factorized bounds " + std::to_string(factorized_bounds[dim_id]));
+            "Dim " + dim_name + " of " + current_node_->ori_node_->name_ + " is not equal to the factorized bounds " + std::to_string(factorized_bounds[dim_id]));
     }
     std::cout << "Loop count of Op " + current_node_->ori_node_->name_ + " success!" << std::endl;
 
+    current_node_ = current_node_->get_parent();
+}
+
+void GetLoopCount::visitTrans(const TransNode* node){
+    TILEEXP_ASSERT(node->get_children().size() == 0, "Trans node should not have child");
+    for (auto& parent_loop_: current_node_->get_parent()->get_inherit_loopnest()){
+        current_node_->add_inherit_loopnest(parent_loop_); // append parent node's loopnest
+    }
+    if(node){}
     current_node_ = current_node_->get_parent();
 }
 
@@ -154,14 +167,6 @@ std::map<std::string, int32_t> GetLoopCount::get_loop_count(
 }
 
 
-void GetLoopCount::visitTrans(const TransNode* node){
-    TILEEXP_ASSERT(node->get_children().size() == 0, "Trans node should not have child");
-    for (auto& parent_loop_: current_node_->get_parent()->get_inherit_loopnest()){
-        current_node_->add_inherit_loopnest(parent_loop_); // append parent node's loopnest
-    }
-    if(node){}
-    current_node_ = current_node_->get_parent();
-}
 
 // std::map<std::string, int> GetLoopCount::get_loop_count(
 //     std::vector<std::vector<loop::TileExp::Descriptor>> input_loopnests){   

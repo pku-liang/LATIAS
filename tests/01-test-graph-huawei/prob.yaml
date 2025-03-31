@@ -2,21 +2,21 @@ problem:
   io:
     ins: A, B, D
     outs: E
-  dimensions: [M,N,K,L]
+  dimensions: [M, N, K]
   instance:
     M: 512
-    N: 64
-    K: 127
-    L: 510
+    N: 256
+    K: 672
+    # L: 512
 
   ops:
   - name: GEMM1
-    dimensions: [M,L,K]
+    dimensions: [M,N,K]
     data-spaces:
     - name: C
       projection:
         - [[M]]
-        - [[L]]
+        - [[N]]
       read-write: True 
     - name: A 
       projection:
@@ -25,42 +25,23 @@ problem:
     - name: B
       projection:
         - [[K]]
-        - [[L]]
+        - [[N]]
     ins: A, B
     out: C
    
-  - name: EXP 
-    dimensions: [M,L]
-    type: exp 
+  - name: RELU 
+    dimensions: [M,N]
+    type: element-wise 
     data-spaces:
     - name: C
       projection:
         - [[M]]
-        - [[L]]
-    - name: exp 
+        - [[N]]
+    - name: relu 
       projection: 
         - [[M]]
-        - [[L]]
+        - [[N]]
       read-write: True 
     ins: C
-    out: exp
+    out: relu
     inplace: True
-    
-  # - name: GEMM2 
-  #   dimensions: [M,L,N]
-  #   data-spaces:
-  #   - name: E 
-  #     projection: 
-  #       - [[M]]
-  #       - [[N]]
-  #     read-write: True 
-  #   - name: exp
-  #     projection: 
-  #       - [[M]]
-  #       - [[L]]
-  #   - name: D 
-  #     projection: 
-  #       - [[L]]
-  #       - [[N]]
-  #   ins: exp, D
-  #   out: E xs

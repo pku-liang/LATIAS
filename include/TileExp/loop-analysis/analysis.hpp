@@ -28,7 +28,7 @@ class SingleMemLevel{
     // current exist tensors
     std::vector<TensorMap> stable_tensors_;
     std::vector<TensorMap> unstable_tensors_;
-}
+};
 
 // DFS arch tree
 class MemLevel{ // for spatial level
@@ -42,23 +42,30 @@ class MemLevel{ // for spatial level
 
     std::vector<std::vector<SingleMemLevel> > mem_level_; // instance array
 
-}
+};
 
 class EvaNode{
     public:
     const Node* ori_node_;
-    private:
+    std::vector<loop::TileExp::Descriptor> loopnests_;
+    // private:
     std::vector<std::vector<loop::TileExp::Descriptor>> inherit_loopnests_; // inherit from the parent nodes
-    std::pair<std::vector<TensorMap>, std::vector<TensorMap> > in_out_tensors_;
+    std::vector<TensorMap> input_tensors_;
+    std::vector<TensorMap> last_input_tensors_;
+    std::vector<TensorMap> output_tensors_;
+    // std::vector<TensorMap> last_output_tensors_;
     mutable EvaNode* parent_ = nullptr;
     std::vector<EvaNode*> children_;
     bool analysis_fine_gran_ = true;
+    std::map<std::string, int> dim_offset_;
     
     public:
     EvaNode(const Node* node): ori_node_(node){
+        loopnests_ = node->loopnests_;
         reset();
     }
     EvaNode* BuildNewTree(const Node* node);
+    
 
     void set_parent(EvaNode* parent){ parent_ = parent; }
     void add_child(EvaNode* child){ children_.push_back(child); } 
@@ -66,20 +73,35 @@ class EvaNode{
     std::vector<EvaNode*> get_children() { return children_; }
     void add_inherit_loopnest(std::vector<loop::TileExp::Descriptor> loopnest){ inherit_loopnests_.push_back(loopnest); }
     std::vector<std::vector<loop::TileExp::Descriptor>> get_inherit_loopnest(){ return inherit_loopnests_; }
+    // void clear_IO_tensors(){ 
+    //     input_tensors_.clear(); 
+    //     output_tensors_.clear(); 
+    // }
+    void InitDimOffset();
+    void add_dim_offset(std::string dim_name, int dim_value){
+        dim_offset_[dim_name] = dim_value;
+    }
+    std::map<std::string, int> get_dim_offset(){ return dim_offset_; }
+    void add_input_tensors(TensorMap tensormap){ input_tensors_.push_back(tensormap); }
+    void add_output_tensors(TensorMap tensormap){ output_tensors_.push_back(tensormap); }
+    std::vector<TensorMap> get_input_tensors(){ return input_tensors_; }
+    std::vector<TensorMap> get_output_tensors(){ return output_tensors_; }
+
 
     void reset(){
         inherit_loopnests_.clear();
-        in_out_tensors_.first.clear();
-        in_out_tensors_.second.clear();
+        input_tensors_.clear();
+        last_input_tensors_.clear();
+        output_tensors_.clear();
     }
 
-    void Print() const;
+    void PrintLoop() const;
 };
 
 class Evaluator{
     public:
     std::uint64_t cycle_;
-    double energy_;    
+    // double energy_;    
     const problem::TileExp::Workloads& workloads_;
     const mapping::TileExp::ExpMapping& mapping_;
     const model::TileExp::Graph& graph_;
@@ -154,9 +176,41 @@ class GetLoopCount: public Visitor{
     std::map<std::string, int32_t> get_loop_count(std::vector<std::vector<loop::TileExp::Descriptor>> input_loopnests);
 };
 
+class SimAnalysis: public Visitor{
+    public:
+    Evaluator& evaluator_;
+    EvaNode* current_node_;
+    bool is_print_ = true;
+    bool is_init_ = false;
+    bool is_get_offset_ = false;
+    std::vector<bool> vec_last_loop_;
+    std::vector<loop::TileExp::Descriptor> current_loop_state_;
+    std::map<std::string, std::vector<int>> dim_offset_all_;
+    std::vector< std::vector<TensorMap> > current_input_tensors_;
+
+    std::vector<std::string> GetInOutTensor(std::string name);
+    std::map<std::string, std::vector<std::string> > GetDimName(std::vector<std::string> tensorName);
+    bool isLastLoop(std::vector<bool> vec_last_loop);
+    void visitTileLoop(const Node* node, unsigned current_loop_idx, bool is_last_loop);
+    void visitScopeLoop(const Node* node);
+    void visitOpLoop(const Node* node);
+    void visitTransLoop();
+    void visitScope(const ScopeNode* node) override;
+    void visitTile(const TileNode* node) override;
+    void visitOp(const OpNode* node) override;
+    void visitTrans(const TransNode* node) override;
+    void run(const Node* root) override;
+    friend class Evaluator;
+    SimAnalysis(Evaluator& evaluator, EvaNode* current_node): 
+        evaluator_(evaluator), current_node_(current_node){}
+    void Init(const Node* node);
+    void getOffset(const Node* node);
+};
+
 class GetMemInfo: public Visitor{
     public:
     Evaluator& evaluator_;
+    EvaNode* current_node_;
     bool is_print_ = true;
     void visitScope(const ScopeNode* node) override;
     void visitTile(const TileNode* node) override;
@@ -164,8 +218,8 @@ class GetMemInfo: public Visitor{
     void visitTrans(const TransNode* node) override;
     void run(const Node* root) override;
     friend class Evaluator;
-    GetMemInfo(Evaluator& evaluator): evaluator_(evaluator){}
-}
+    GetMemInfo(Evaluator& evaluator, EvaNode* current_node): evaluator_(evaluator), current_node_(current_node){}
+};
 
 } // namespace Analysis
 } // namespace TileExp

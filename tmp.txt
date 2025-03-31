@@ -1,0 +1,110 @@
+input file: ./tests/01-test-graph-huawei/Huawei.yaml
+input file: ./tests/01-test-graph-huawei/map_new.yaml
+input file: ./tests/01-test-graph-huawei/prob.yaml
+ParseTreeSpecs
+UB
+Vector
+L0C
+Cube
+L0AB
+L1
+MainMemory
+start build graph
+Node Name: MainMemory
+Node Name: L1
+Node Name: L0AB
+Node Name: Cube
+Node Name: L0C
+Node Name: Vector
+Node Name: UB
+========== Graph start ==========
+Arch Root: MainMemory
+Arch Node Num: 7
+Node:MainMemory
+Edge:MainMemory to L1
+Edge:MainMemory to UB
+Node:L1
+Edge:L1 to L0AB
+Node:L0AB
+Edge:L0AB to Cube
+Node:Cube
+Edge:Cube to L0C
+Node:L0C
+Edge:L0C to MainMemory
+Edge:L0C to Vector
+Node:Vector
+Edge:Vector to MainMemory
+Edge:Vector to L0C
+Node:UB
+Edge:UB to MainMemory
+Edge:UB to Vector
+=========== Graph end ===========
+Begin ParseWorkload...
+--------------Workloads------------
+dimensions:[M,512][N,256][K,672]
+Tensors:
+  C[M][N]
+  A[M][K]
+  B[K][N]
+  relu[M][N]
+Op: RELU(C,)->relu
+Op: GEMM1(A,B,)->C
+UseFlattening: 0
+Shape:
+-----------Shape------------
+FactorizedDimensionIDToName:0:M,1:N,2:K,
+FactorizedDimensionNameToID:K:2,M:0,N:1,
+FlattenedDimensionIDToName:0:M,1:N,2:K,
+FlattenedDimensionNameToID:K:2,M:0,N:1,
+NumDataSpaces:4
+DataSpaceIDToName:0:C,1:A,2:B,3:relu,
+DataSpaceNameToID:A:1,B:2,C:0,relu:3,
+--------End Shape-----------
+------------End Workloads----------
+==========AccessEnergy===========
+Buffer::UB::energy_per_op::read,1.70212e+06
+Buffer::UB::energy_per_op::update,1.70212e+06
+Buffer::UB::energy_per_op::fill,1.70212e+06
+Arith::Vector::energy_per_op,1
+Buffer::L0C::energy_per_op::read,2145.77
+Buffer::L0C::energy_per_op::update,2145.77
+Buffer::L0C::energy_per_op::fill,2145.77
+Arith::Cube::energy_per_op,1
+Buffer::L0AB::energy_per_op::read,2145.77
+Buffer::L0AB::energy_per_op::update,2145.77
+Buffer::L0AB::energy_per_op::fill,2145.77
+Buffer::L1::energy_per_op::read,2145.77
+Buffer::L1::energy_per_op::update,2145.77
+Buffer::L1::energy_per_op::fill,2145.77
+Buffer::MainMemory::energy_per_op::read,100
+Buffer::MainMemory::energy_per_op::update,100
+Buffer::MainMemory::energy_per_op::fill,100
+========End AccessEnergy=========
+=======Fanout Map======
+Cube -> L0C : 1, 1
+L0AB -> Cube : 1, 1
+L0C -> MainMemory : 1, 1
+L0C -> Vector : 1, 1
+L1 -> L0AB : 1, 1
+MainMemory -> L1 : 20, 1
+MainMemory -> UB : 20, 1
+UB -> MainMemory : 1, 1
+UB -> Vector : 1, 1
+Vector -> L0C : 1, 1
+Vector -> MainMemory : 1, 1
+=======End Fanout Map======
+========Mapping Tree========
+Target Mem Level: MainMemory, Node type: Tile::Spatial, Loop Nest: N[0, 2(0), 1] M[0, 4(0), 1]
+Target Mem Level: No (Scope), Node type: Scope::Pipeline
+Target Mem Level: L1, Node type: Tile::Temporal, Loop Nest: K[0, 4(1), 1]
+Target Mem Level: L0AB, Node type: Tile::Temporal, Loop Nest: K[0, 8(2), 1] N[0, 8(0), 1] M[0, 8(0), 1]
+Target Mem Level: Cube, Node type: Op::GEMM1, Loop Nest: K[0, 16(0), 1] N[0, 16(0), 1] M[0, 16(0), 1]
+Target Mem Level: L0C, Node type: Trans
+Target Mem Level: L0C, Node type: Tile::Temporal, Loop Nest: N[0, 2(0), 1] M[0, 2(0), 1]
+Target Mem Level: Vector, Node type: Op::RELU, Loop Nest: N[0, 64(0), 1] M[0, 64(0), 1]
+Target Mem Level: MainMemory, Node type: Trans
+======End Mapping Tree=======
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Loop count of Op Op::RELU success!
+======== End Evaluate ========

@@ -16,24 +16,24 @@ architecture:
         alignments: 0
         layout: ND
 
-    - name: L1[0..15] 
+    - name: L1[0..19] 
       class: SRAM 
       attributes:
-        meshX: 4 
-        meshY: 4
+        meshX: 20 
+        meshY: 1
         depth: 64 
-        block_size: 1024
+        block_size: 1024 
         word-bits: 8
         read_bandwidth: 2
         write_bandwidth: 2
         successor: L0AB
         alignments: 0
       
-    - name: L0AB[0..15] 
+    - name: L0AB[0..19] 
       class: SRAM 
       attributes:
-        meshX: 4 
-        meshY: 4
+        meshX: 20 
+        meshY: 1
         depth: 64 
         block_size: 1024
         word-bits: 8
@@ -43,21 +43,21 @@ architecture:
         alignments: 0
         layout: ND
     
-    - name: Cube[0..31] 
+    - name: Cube[0..19] 
       class: intmac 
       attributes: 
         word-bits: 16 
-        meshX: 4
-        meshY: 8
+        meshX: 20
+        meshY: 1
         compute_cycles: 1
         successor: L0C
         layout: ND
 
-    - name: L0C[0..15] 
+    - name: L0C[0..19] 
       class: SRAM 
       attributes:
-        meshX: 2
-        meshY: 8
+        meshX: 20
+        meshY: 1
         depth: 64 
         block_size: 1024
         word-bits: 8
@@ -67,24 +67,24 @@ architecture:
         alignments: 0
         layout: ND
 
-    - name: Vector[0..31] 
+    - name: Vector[0..19] 
       class: intmac 
       attributes: 
         word-bits: 16 
-        meshX: 2
-        meshY: 16
+        meshX: 20
+        meshY: 1
         compute_cycles: 2
         successor: MainMemory, L0C
         layout: ND
     
-    - name: UB[0..15] 
+    - name: UB[0..19] 
       class: SRAM 
       attributes:
-        meshX: 2
-        meshY: 8
+        meshX: 20
+        meshY: 1
         depth: 64 
         block_size: 1024
-        word-bits: 8
+        word-bits: 256
         read_bandwidth: 2
         write_bandwidth: 2
         successor: MainMemory, Vector

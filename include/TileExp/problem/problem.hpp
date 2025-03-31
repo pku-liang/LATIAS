@@ -68,6 +68,7 @@ namespace TileExp {
         const problem::Workload& get_workload() const;
         const problem::Shape& get_shape() const {return common_shape_;}
         const problem::Workload::FactorizedBounds get_factorized_bounds() const {return factorized_bounds_;}
+        // const problem::Shape& get_common_shape() { return common_shape_; }
 
         friend class Workload;
     };

@@ -114,6 +114,8 @@ lib_sources = Split("""
 ./mapping/mapping.cpp                    
 ./problem/parser.cpp
 ./model/graph.cpp
+./model/hardware.cpp
+./model/interconnection.cpp
 ./common.cpp
 ./mapper/checker.cpp
 ./loop-analysis/analysis.cpp

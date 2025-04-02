@@ -10,6 +10,7 @@
 #include "util/args.hpp"
 
 #include "./TileExp/model/graph.hpp"
+#include "./TileExp/model/interconnection.hpp"
 #include "./TileExp/common.hpp"
 #include "./TileExp/problem/problem.hpp"
 #include "./TileExp/mapping/mapping.hpp"
@@ -22,7 +23,7 @@ void show_energy(
   const model::Engine::Specs& EngineSpecs,
   std::ostream& o = std::cout) {
 
-  auto specs_ = EngineSpecs.topology;
+  auto specs_ = EngineSpecs.topology; 
   o << "==========AccessEnergy===========" << std::endl;
   // o << "metric, energy" << std::endl;
   for (unsigned i = 0; i < specs_.NumLevels(); i++) {
@@ -74,6 +75,18 @@ int main(int argc, char* argv[])
   else if (root.exists("architecture")){
     arch = root.lookup("architecture");
   }
+
+
+  Hardware::ArchTopology::ArchTopo archTopo_;
+  Hardware::ArchTopology::ParseArchTopology(arch, archTopo_);
+
+  auto interconnection = root.lookup("interconnection");
+  Hardware::InterConnection::InterCon interCon_;
+  Hardware::InterConnection::ParseInterConnection(interconnection, interCon_, archTopo_); // parse interconnection
+
+
+  archTopo_.Print();
+  interCon_.Print();
 
   auto problem = root.lookup("problem");
   problem::TileExp::Workloads workloads_instance_;

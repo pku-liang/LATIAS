@@ -29,7 +29,9 @@ enum ScopeType {
     Sequential,
     Parallel,
     Sharing,
-    Pipeline
+    Pipeline,
+    Ring,
+    Mesh
 };
 
 void tolower(std::string& str);

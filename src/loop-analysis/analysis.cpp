@@ -50,7 +50,8 @@ void Evaluator::evaluate(){
     reset();
     get_loop_count();
     // get_mem_info();
-    analysis();
+    // analysis();
+    analysis_latias();
     std::cout << "======== End Evaluate ========" <<std::endl;
 }
 
@@ -63,6 +64,56 @@ void Evaluator::analysis(){
     SimAnalysis pass_(*this, eva_root_);
     pass_.run(root_);
 }
+
+void Evaluator::analysis_latias(){
+    PerfAnalysis pass_(*this, eva_root_);
+    pass_.run(root_);
+}
+
+void PerfAnalysis::run(const Node* root){
+    // init
+    // is_init_ = true;
+    // root->accept(this);
+    // is_init_ = false;
+    // // get offset
+    // is_get_offset_ = true;
+    // root->accept(this);
+    // is_get_offset_ = false;
+
+    // analysis
+    root->accept(this);
+}
+
+void PerfAnalysis::visitScope(const ScopeNode* node){
+}
+
+void PerfAnalysis::visitTile(const TileNode* node){
+}
+
+void PerfAnalysis::visitOp(const OpNode* node){
+}
+
+void PerfAnalysis::visitTrans(const TransNode* node){
+}
+
+// 递归循环，用于表示不同loop dimension
+void PerfAnalysis::RecursiveLoop(const Node* node, unsigned current_loop_idx, bool is_last_loop){
+    if (~is_last_loop){
+        // 递归循环
+        RecursiveLoop(node, current_loop_idx + 1, is_last_loop);
+    }
+    else{
+        // go to child-node
+        for (unsigned i = 0 ; i < node->get_children().size(); i++){
+            current_node_ = current_node_->get_children()[i];
+            node->get_children()[i]->accept(this);
+        }
+        current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
+    }
+}
+
+
+
 
 void SimAnalysis::run(const Node* root){
     // init

@@ -11,9 +11,9 @@
 
 
 namespace mapping{
-    
-std::map<std::string, unsigned> LevelName2IdxMap;
-std::map<std::string, std::string> LevelName2TypeMap;
+
+std::unordered_map<std::string, unsigned> LevelName2IdxMap = {};
+std::unordered_map<std::string, std::string> LevelName2TypeMap = {};
 
 namespace TileExp{
 
@@ -53,6 +53,13 @@ Node::Node(
         else{
             TILEEXP_ERROR("No target level is specified.");
         }
+    }
+
+    std::string fixed;
+    if (config.exists("fixed")){
+        config.lookupValue("fixed", fixed);
+        if(fixed == 0) fixed_ = false;
+        else fixed_ = true;
     }
 
     if (config.exists("bypass")) config.lookupArrayValue("bypass", bypassed_);
@@ -139,9 +146,9 @@ TileNode::TileNode(config::CompoundConfigNode config): Node(Node::Tile, config){
     // this part now in Node()
     // ParseStorageLevel(config); // 找到当前的storage level，并存储在storage_level_name_和storage_level_中
 
-    if (config.exists("multicast")) { 
-        config.lookupValue("multicast", multicast_enabled_);
-    }
+    // if (config.exists("multicast")) { 
+    //     config.lookupValue("multicast", multicast_enabled_);
+    // }
 
     unsigned split = iters.size();
     config.lookupValue("split", split);
@@ -333,6 +340,19 @@ void Node::Print() const {
 }
 
 void ExpMapping::Print() const {
+    std::cout << "========Mapping Tree========" << std::endl;
+    auto root_ = root;
+    root_->Print();
+    // std::cout << "Target Mem Level: " << root_->get_target_level_name() << 
+                //  " , Node type: " << root_->get_name() << std::endl;
+    // for (auto child: root_->get_children()) {
+    //     child->Print();
+    // }
+    std::cout << "======End Mapping Tree=======" << std::endl;
+
+}
+
+void InterMapping::Print() const {
     std::cout << "========Mapping Tree========" << std::endl;
     auto root_ = root;
     root_->Print();

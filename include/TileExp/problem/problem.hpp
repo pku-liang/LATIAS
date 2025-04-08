@@ -3,7 +3,7 @@
 #include "mapping/parser.hpp"
 
 #include "./TileExp/common.hpp"
-
+#include "./TileExp/model/hardware.hpp"
 
 namespace problem {
 
@@ -17,12 +17,14 @@ namespace TileExp {
         std::vector<std::string> ins_; // Input tensor
         std::string out_;
         std::string name_;  
+        Hardware::ArchTopology::LevelType type_;
         Workloads& workloads_;
         bool binding_applied = false;
     public: 
         Workload(Workloads& workloads): workloads_(workloads){}
         inline void set_name(const std::string & name){name_ = name;}
         void set_io(const std::vector<std::string>& ins, const std::vector<std::string>& outs);
+        void set_type(const std::string& type);
         inline const std::vector<std::string>& get_ins() const { return ins_; }
         inline const std::string & get_out() const {return out_;}
         inline const std::string & get_name() const {return name_;} 

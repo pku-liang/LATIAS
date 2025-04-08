@@ -1,5 +1,9 @@
 #pragma once 
 
+#include <sstream>
+#include <iostream>
+#include <iomanip>
+
 #define MCARO_WRAPPER(code) do {code} while(0) 
 
 #define TILEEXP_ERROR(msg) do{std::cerr << "[ERROR]: " << msg << std::endl;exit(1);} while(0)
@@ -19,6 +23,12 @@
 #include "TileExp/mapper/expr.hpp"
 
 const int MaxTensors = 32;
+
+inline std::string format_fixed(const std::string& str, size_t width) {
+    std::ostringstream oss;
+    oss << std::left << std::setw(width) << std::setfill(' ') << str;
+    return oss.str().substr(0, width); // 保证最终长度
+}
 
 namespace TileExp {
 

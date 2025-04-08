@@ -4,6 +4,7 @@
 
 #include "TileExp/mapping/mapping.hpp"
 #include "TileExp/mapper/expr.hpp"
+#include "TileExp/mapping/parser.hpp"
 // #include "TileExp/model/graph.hpp"
 
 using TileExp::macros;
@@ -41,6 +42,72 @@ ExpMapping ParseAndConstruct(config::CompoundConfigNode config,
     mapping.PrintFanoutMap();
 
     return mapping;
+}
+
+InterMapping ParseMapping(config::CompoundConfigNode config,
+                         const problem::TileExp::Workloads& workloads,
+                         const Hardware::ArchTopology::ArchTopo& archtopo,
+                         const Hardware::InterConnection::InterCon& intercon)
+{
+    // arch_props_ = ArchProperties();
+    // arch_props_.Construct(arch_specs);
+    // arch_specs_ = arch_specs;
+    // auto arch_specs_ = arch_specs;
+
+    p_workloads_ = &workloads;
+
+    InterMapping mapping;
+    mapping.archtopo_ = archtopo;
+    mapping.intercon_ = intercon;
+    mapping.root = RecursiveParse(config); //
+
+    return mapping;
+}
+
+Node* InterRecursiveParse(config::CompoundConfigNode config){
+    std::string node_type; 
+
+    if (!config.lookupValue("node-type", node_type)) {
+        TILEEXP_ERROR("No node-type is specified.");
+    }
+    tolower(node_type);
+
+    Node * node = nullptr;
+    if (node_type == "tile") {
+        node = new TileNode(config);
+    }
+    else if (node_type == "op") {
+        node = new OpNode(config);
+    }
+    else if (node_type == "scope") {
+        node = new ScopeNode(config);
+    }
+    else if (node_type == "trans"){
+        node = new TransNode(config); // TBD
+    }
+    else {
+        TILEEXP_ERROR("Current node type is not a valid type.");
+    }
+        
+    assert(node != nullptr);
+    
+    if (config.exists("subtree")) {
+        config = config.lookup("subtree");
+        if (config.isList()){
+            for (int i = 0; i < config.getLength(); i++){
+                node->add_child(InterRecursiveParse(config[i])); // TBD add_child
+            }
+        }
+        else {
+            node->add_child(InterRecursiveParse(config));
+        }
+    }
+    // graph mode can tolerate non-Op leaf node
+    // else if (node_type != "op") {
+    //     TILEFLOW_ERROR("Exist non-Op leaf node.");
+    // }
+
+    return node;
 }
 
 MeshXYPair ExpMapping::GetNodeMeshXY(std::shared_ptr<model::TileExp::GraphNode> ptr_node_,

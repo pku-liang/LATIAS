@@ -84,67 +84,17 @@ int main(int argc, char* argv[])
   Hardware::InterConnection::InterCon interCon_;
   Hardware::InterConnection::ParseInterConnection(interconnection, interCon_, archTopo_); // parse interconnection
 
+  if (TileExp::verbose_level){
+    archTopo_.Print();
+    interCon_.Print();
+  }
 
-  archTopo_.Print();
-  interCon_.Print();
+  mapping::LevelName2IdxMap = archTopo_.GetArchTopoName2IdxMap();
+  // mapping::LevelName2TypeMap = archTopo_.topology.GetLevelName2TypeMap();
 
   auto problem = root.lookup("problem");
   problem::TileExp::Workloads workloads_instance_;
-
-  bool is_sparse_topology = root.exists("sparse_optimizations"); // we don't consider this
-
-  // node information hide in model::Engine::Specs::topology
-  model::Engine::Specs arch_specs_ = model::Engine::ParseSpecs(arch, is_sparse_topology); // only for sepc.topology
-  mapping::LevelName2IdxMap = arch_specs_.topology.GetName2IdxMap();
-  mapping::LevelName2TypeMap = arch_specs_.topology.GetLevelName2TypeMap();
   
-
-  // std::cout << mapping::LevelName2IdxMap.at("MainMemory") << std::endl;
-
-  if (root.exists("ERT")) // we don't consider this
-  {
-    std::cout << "Found Accelergy ERT (energy reference table), replacing internal energy model." << std::endl;
-    auto ert = root.lookup("ERT"); 
-    arch_specs_.topology.ParseAccelergyERT(ert);
-    if (root.exists("ART")){ // Nellie: well, if the users have the version of Accelergy that generates ART
-      auto art = root.lookup("ART"); 
-      arch_specs_.topology.ParseAccelergyART(art);  
-    } 
-  }
-
-  // print buffer words
-  for (unsigned storage_level_id = 0; storage_level_id < arch_specs_.topology.NumLevels();
-      storage_level_id ++){
-    if (storage_level_id < arch_specs_.topology.ArithmeticMap() + 1) continue;
-    auto bufferlevel = arch_specs_.topology.GetLevel(storage_level_id);
-    auto bufferspecs = std::static_pointer_cast<model::BufferLevel::Specs>(bufferlevel);
-    TILEEXP_COND_WARNING(bufferspecs->size.IsSpecified(), "No memory size specified at " << bufferspecs->name.Get());
-    if (TileExp::verbose_level) {
-      std::cout << bufferspecs->name.Get() << ": ";
-      std::cout << bufferspecs->size.Get() << " words" << std::endl;
-    }
-  }  
-
-  // // ***** test ***** //
-  // auto topology = arch_specs_.topology;
-  // auto level_spec = topology.GetLevel(2);
-  // std::cout << "get success" << std::endl;
-  // model::BufferLevel::Specs& current_specs = *std::static_pointer_cast<model::BufferLevel::Specs>(level_spec);
-  // // std::cout << current_specs.className << current_specs.layout << std::endl;
-  // for(auto& tmp: current_specs.successor.Get()){
-  //   std::cout << tmp << std::endl;
-  // }
-  // std::cout << "cast success" << std::endl;
-  // // copy cosntruct error -- new element?
-  // std::shared_ptr<model::BufferLevel> buffer_level = std::make_shared<model::BufferLevel>(current_specs); 
-  // std::cout << "ptr success" << std::endl;
-  // // ***** end test ***** //
-
-  // build architecture graph  
-  model::TileExp::Graph graph_(arch_specs_);
-  if(TileExp::verbose_level) 
-    graph_.Print();
-
   // parse workload -- tileflow mode
   std::cout << "Begin ParseWorkload..." << std::endl;
   problem::TileExp::ParseWorkloads(problem, workloads_instance_); // analysis prob yaml
@@ -152,33 +102,27 @@ int main(int argc, char* argv[])
 
   if (TileExp::verbose_level)  
     workloads_instance_.Print();
-
-  if (TileExp::verbose_level) 
-    show_energy(arch_specs_, std::cout);
   
-  // note that we do not consider the network specs 
+  // parse mapping -- input workloads, interconnections and arch
+  auto mapping_ = mapping::TileExp::ParseMapping(root.lookup("mapping"), workloads_instance_, archTopo_, interCon_);
 
-  // parse mapping -- input config, graph topology and workloads
-  auto mapping_ = 
-    mapping::TileExp::ParseAndConstruct(root.lookup("mapping"), graph_, workloads_instance_, arch_specs_); // parse mapping
-  
   if (TileExp::verbose_level)
     mapping_.Print();
 
-  // bool enable_mem_check_ = true;
-  // bool enable_spatial_check_ = true;
-  // bool enable_operation_check_ = true;
-  // // here we do not consider the loop count check since there might be some variables in our mapping
-  // bool enable_loopcount_check_ = false; 
+  bool enable_mem_check_ = true;
+  bool enable_spatial_check_ = true;
+  bool enable_operation_check_ = true;
+  // here we do not consider the loop count check since there might be some variables in our mapping
+  bool enable_loopcount_check_ = false; 
 
   // check
-  // TileExp::Check::Checker checker_(workloads_instance_, mapping_, graph_,  
-  //   enable_mem_check_, enable_spatial_check_, enable_loopcount_check_, enable_operation_check_);
+  Check::TileExp::Checker checker_(workloads_instance_, mapping_, archTopo_, interCon_,  
+    enable_mem_check_, enable_spatial_check_, enable_loopcount_check_, enable_operation_check_);
 
-  // checker_.check();
+  checker_.check();
 
-  // evaluate data movement, latency and energy consumption
-  TileExp::Analysis::Evaluator evaluator_(workloads_instance_, mapping_, graph_, arch_specs_);
+  // // evaluate data movement, latency and energy consumption
+  TileExp::Analysis::Evaluator evaluator_(workloads_instance_, mapping_, archTopo_, interCon_);
 
   evaluator_.evaluate();
 

@@ -7,12 +7,17 @@ namespace Hardware{
 
 namespace ArchTopology{
 
+    
 enum LevelType{
-    Arith,
+    Matrix,
+    Vector,
     Buffer,
     UNKNOWN
 };
 
+extern std::unordered_map<std::string, LevelType> String2LevelType;
+extern std::unordered_map<LevelType, std::string> LevelType2String;
+    
 struct LevelAttri{
     std::string name;
     unsigned int level_num;
@@ -39,11 +44,16 @@ class ArchTopo{
 public:
     LevelAttri levelAttri_;
     std::unordered_map<std::string, LevelAttri> archTopo_map_;
+    std::unordered_map<std::string, unsigned int> archTopoName2Idx_map_;
+    unsigned level_num_ = 0;
 
     void Print() const;
     void SetLevelType(std::string level_name);
     void SetAttributes(config::CompoundConfigNode config);
     void AddArchMap(std::string name){ archTopo_map_[name] = levelAttri_;}
+
+    std::unordered_map<std::string, unsigned int> GetArchTopoName2IdxMap() const {return archTopoName2Idx_map_;}
+    unsigned int GetLevelNum() const {return level_num_;}
 };
 
 void ParseArchTopology(config::CompoundConfigNode config, ArchTopo& archTopo);

@@ -1,12 +1,16 @@
 #pragma once 
 
 #include <vector> 
+#include <stack>
 
 #include "model/engine.hpp"
 #include "TileExp/problem/problem.hpp"
 #include "TileExp/mapping/mapping.hpp"
 #include "TileExp/model/graph.hpp"
 #include "TileExp/mapper/expr.hpp"
+#include "TileExp/model/hardware.hpp"
+#include "TileExp/model/interconnection.hpp"
+
 
 using mapping::TileExp::Visitor;
 using mapping::TileExp::Node;
@@ -17,9 +21,13 @@ using mapping::TileExp::TransNode;
 
 using TileExp::DimRange;
 
+
+
 namespace TileExp{
 
 namespace Analysis{
+
+typedef std::string DimName;
 
 class SingleMemLevel{
     public:
@@ -87,7 +95,7 @@ class EvaNode{
     std::vector<TensorMap> get_input_tensors(){ return input_tensors_; }
     std::vector<TensorMap> get_output_tensors(){ return output_tensors_; }
 
-
+    // reset loopnest, tensors
     void reset(){
         inherit_loopnests_.clear();
         input_tensors_.clear();
@@ -103,9 +111,11 @@ class Evaluator{
     std::uint64_t cycle_;
     // double energy_;    
     const problem::TileExp::Workloads& workloads_;
-    const mapping::TileExp::ExpMapping& mapping_;
-    const model::TileExp::Graph& graph_;
-    const model::Engine::Specs arch_specs_;
+    const mapping::TileExp::InterMapping& mapping_;
+    const Hardware::ArchTopology::ArchTopo& arch_topo_;
+    const Hardware::InterConnection::InterCon& intercon_;
+    // const model::TileExp::Graph& graph_;
+    // const model::Engine::Specs arch_specs_;
     EvaNode* eva_root_;
     const Node* root_;
 
@@ -116,10 +126,12 @@ class Evaluator{
     double energy_ = 0.0;
 
     Evaluator(const problem::TileExp::Workloads& workloads,
-        const mapping::TileExp::ExpMapping& mapping, // tree-based mapping
-        const model::TileExp::Graph& graph, 
-        const model::Engine::Specs arch_specs)
-        : workloads_(workloads), mapping_(mapping), graph_(graph), arch_specs_(arch_specs){
+        const mapping::TileExp::InterMapping& mapping, // tree-based mapping
+        const Hardware::ArchTopology::ArchTopo& arch_topo,
+        const Hardware::InterConnection::InterCon& intercon)
+        // const model::TileExp::Graph& graph, 
+        // const model::Engine::Specs arch_specs)
+        : workloads_(workloads), mapping_(mapping), arch_topo_(arch_topo), intercon_(intercon){
             root_ = mapping_.root;
             eva_root_ = new EvaNode(mapping_.root);
             eva_root_->set_parent(nullptr);
@@ -150,6 +162,7 @@ class Evaluator{
 
     // analysis data movement, latency
     void analysis();
+    void analysis_latias();
 
     // friend class ResetFunc;
     // void evaluate_loop_count() const;
@@ -175,6 +188,46 @@ class GetLoopCount: public Visitor{
     void IsPrint(bool is_print){ is_print_ = is_print; }
     std::map<std::string, int32_t> get_loop_count(std::vector<std::vector<loop::TileExp::Descriptor>> input_loopnests);
 };
+
+class PerfAnalysis: public Visitor{
+    public:
+    Evaluator& evaluator_;
+    EvaNode* current_node_;
+    // for store the current loop info
+    std::vector<std::vector<loop::TileExp::Descriptor>> loop_vector_all_;
+    // for store all the tensor info
+    std::vector<std::vector<TensorMap>> tensor_vector_all_;
+    std::vector<DimRange> dim_range_tmp_;
+    std::vector<TensorMap> tensor_map_tmp_;
+    int current_tile_idx = 0;
+    int data_movement = 0;
+        
+    // 递归循环，用于表示不同loop dimension
+    void RecursiveLoop(const Node* node, unsigned current_loop_idx, bool is_last_loop);
+    // 获取当前循环下，每一个dimension的范围
+    std::vector<DimRange> computeRange(const std::vector<std::vector<loop::TileExp::Descriptor>> loop_vector);
+    // 获取当前循环下，相关的tensor的范围
+    std::vector<TensorMap> computeTensorRange(std::vector<DimRange>& dim_range);
+    // 计算当前循环下，tensor变化的范围，并更新data_movement
+    void diffTensorRange(const std::vector<DimRange>& tensor_range);
+    // 计算在对应数据搬运量下的延迟，每一个延迟包括搬入，计算，搬出，或搬入、计算
+    std::vector<int> computeLatency(std::string source, std::string target, int data_movement);
+    std::vector<int> scopeLatency();
+    std::vector<int> tileLatency();
+    std::vector<int> transLatency();
+
+    bool is_print_ = true;
+    void visitScope(const ScopeNode* node) override;
+    void visitTile(const TileNode* node) override;
+    void visitOp(const OpNode* node) override;
+    void visitTrans(const TransNode* node) override;
+    void run(const Node* root) override;
+    friend class Evaluator;
+    PerfAnalysis(Evaluator& evaluator, EvaNode* current_node): 
+        evaluator_(evaluator), current_node_(current_node){}
+};
+
+
 
 class SimAnalysis: public Visitor{
     public:

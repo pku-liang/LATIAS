@@ -12,6 +12,7 @@ problem:
   ops:
   - name: GEMM1
     dimensions: [M,N,K]
+    type: MATRIX
     data-spaces:
     - name: C
       projection:
@@ -31,7 +32,7 @@ problem:
    
   - name: RELU 
     dimensions: [M,N]
-    type: element-wise 
+    type: VECTOR
     data-spaces:
     - name: C
       projection:
@@ -44,4 +45,21 @@ problem:
       read-write: True 
     ins: C
     out: relu
+    inplace: True
+  
+  - name: EXP 
+    dimensions: [M,N]
+    type: VECTOR
+    data-spaces:
+    - name: relu
+      projection:
+        - [[M]]
+        - [[N]]
+    - name: exp 
+      projection: 
+        - [[M]]
+        - [[N]]
+      read-write: True 
+    ins: relu
+    out: exp
     inplace: True

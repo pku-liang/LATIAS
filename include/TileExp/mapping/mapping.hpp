@@ -11,6 +11,8 @@
 #include "TileExp/mapper/expr.hpp"
 #include "TileExp/mapper/symbol.hpp"
 #include "TileExp/mapping/loop.hpp"
+#include "TileExp/model/interconnection.hpp"
+#include "TileExp/model/hardware.hpp"
 // #include "TileExp/mapping/mapping.hpp"
 
 
@@ -20,8 +22,9 @@ using TileExp::TensorMap;
 
 namespace mapping{
 
-extern std::map<std::string, unsigned> LevelName2IdxMap;
-extern std::map<std::string, std::string> LevelName2TypeMap;
+
+extern std::unordered_map<std::string, unsigned> LevelName2IdxMap;
+extern std::unordered_map<std::string, std::string> LevelName2TypeMap;
 
 namespace TileExp{
 
@@ -90,6 +93,7 @@ public:
     bool profile_ = true;
     std::string name_;
     std::string target_level_name;
+    bool fixed_ = false;
     static const std::unordered_map<type_t, std::string> type2name_; 
     unsigned target_level_id;
     std::vector<loop::TileExp::Descriptor> loopnests_; 
@@ -147,7 +151,7 @@ private:
 
     // describe current tile node's loop factor -- support var
     TileNode::type_t type_;
-    bool multicast_enabled_ = true;
+    // bool multicast_enabled_ = true;
     // model::Engine::Specs arch_sepcs_;
 
 public:
@@ -156,7 +160,7 @@ public:
     //         std::ostream& = std::cout) const override;
     void accept(Visitor* visitor) const {visitor->visitTile(this);}
     bool is_spatial() const {return type_ == Spatial;}
-    bool is_multicast_enabled() const {return multicast_enabled_;}
+    // bool is_multicast_enabled() const {return multicast_enabled_;}
     TileNode::type_t get_tile_type() const {return type_;}
     
     loop::Nest constructLoopNest(const SymbolTable* symbol_table = nullptr) const; // TBD, currently do not use
@@ -218,6 +222,26 @@ struct ExpMapping: public Mapping{
 
     // function 
     ExpMapping(){};
+    // Parse
+    void ParseFanoutMap(model::TileExp::Graph& arch_specs); // parse fanout map to ExpFanoutXMap and ExpFanoutYMap
+    MeshXYPair GetNodeMeshXY(std::shared_ptr<model::TileExp::GraphNode> ptr_node_,
+                                        std::string type_);
+    // Get
+    ExpFanoutXYMap GetFanoutXYMap() const { return ExpFanoutXYMap_; };
+    // Print
+    void Print() const;
+    void PrintFanoutMap() const;
+};
+
+struct InterMapping: public Mapping{
+    ExpFanoutXYMap ExpFanoutXYMap_; // arch level XY
+    Node* root;
+    // model::Engine::Specs arch_specs_;
+    Hardware::ArchTopology::ArchTopo archtopo_;
+    Hardware::InterConnection::InterCon intercon_;
+    
+    // function 
+    InterMapping(){};
     // Parse
     void ParseFanoutMap(model::TileExp::Graph& arch_specs); // parse fanout map to ExpFanoutXMap and ExpFanoutYMap
     MeshXYPair GetNodeMeshXY(std::shared_ptr<model::TileExp::GraphNode> ptr_node_,

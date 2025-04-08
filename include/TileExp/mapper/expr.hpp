@@ -40,14 +40,16 @@ namespace TileExp {
 
         TensorMap();
         TensorMap(std::string tensor_name, 
-        std::vector<std::string> tensor_dims,
-        std::vector<DimRange> tensor_ranges):
-        tensor_name_(tensor_name), tensor_dims_(tensor_dims), tensor_ranges_(tensor_ranges) {}
+            std::vector<std::string> tensor_dims,
+            std::vector<DimRange> tensor_ranges):
+            tensor_name_(tensor_name), tensor_dims_(tensor_dims), tensor_ranges_(tensor_ranges) {}
 
         void add_dim(); // TBD
         
     };
 
+    // need overload TensorMap add function
+    TensorMap operator+(const TensorMap& tensor_map1, const TensorMap& tensor_map2);
 
     // struct Constraint {
     //     enum {

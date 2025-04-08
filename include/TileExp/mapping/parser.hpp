@@ -32,6 +32,8 @@
 #include "compound-config/compound-config.hpp"
 
 #include "TileExp/mapping/mapping.hpp"
+#include "TileExp/model/interconnection.hpp"
+#include "TileExp/model/hardware.hpp"
 
 
 namespace mapping
@@ -42,6 +44,11 @@ ExpMapping ParseAndConstruct(config::CompoundConfigNode config,
                           model::TileExp::Graph& graph,
                           const problem::TileExp::Workloads& workloads,
                           model::Engine::Specs& arch_specs);
+
+InterMapping ParseMapping(config::CompoundConfigNode config,
+                        const problem::TileExp::Workloads& workloads,
+                        const Hardware::ArchTopology::ArchTopo& arch_specs,
+                        const Hardware::InterConnection::InterCon& intercon);
 
 // TileExp::Node* RecursiveParse(config::CompoundConfigNode config);
 

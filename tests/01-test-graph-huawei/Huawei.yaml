@@ -45,7 +45,7 @@ architecture:
   
   - name: Cube 
     level_num: 20
-    level_name: MAC 
+    level_name: MATRIX 
     attributes: 
       word-bits: 16 
       meshX: 20
@@ -71,7 +71,7 @@ architecture:
 
   - name: Vector
     level_num: 20
-    level_name: MAC 
+    level_name: VEC 
     attributes: 
       word-bits: 16 
       meshX: 20

@@ -10,7 +10,7 @@ namespace TileExp{
     public: 
         std::string name_;
         bool is_variable_;
-        int current_loop_;
+        int current_loop_ = 0;
         void Print(std::ostream& out, bool long_form = true) const; // TBD
     };
 

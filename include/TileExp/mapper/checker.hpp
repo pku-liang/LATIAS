@@ -3,6 +3,8 @@
 #include <vector> 
 
 #include "TileExp/mapping/mapping.hpp"
+#include "TileExp/model/hardware.hpp"
+#include "TileExp/model/interconnection.hpp"
 
 // Goal: verify the correctness of current mapping under arch and workloads
 // rule1: memory resource constraint -- in paper, different level has different memory resource -- consider TransNode
@@ -19,14 +21,24 @@ using mapping::TileExp::TransNode;
 using mapping::TileExp::Visitor;
 
 
-namespace TileExp{
 namespace Check{
+
+namespace TileExp{
+
+// std::list<std::string> ElementwiseOpList = {
+//     "add", "sub", "mul", "div", "max", "min", "abs", "neg",
+//     "and", "or", "xor", "not", "eq", "ne", "lt", "le",
+//     "gt", "ge", "exp", "relu"
+// };
 
 class Checker{
     private:
     const problem::TileExp::Workloads& workloads_;
-    const mapping::TileExp::ExpMapping& mapping_;
-    const model::TileExp::Graph& graph_;
+    const mapping::TileExp::InterMapping& mapping_;
+    const Hardware::ArchTopology::ArchTopo& arch_topo_;
+    const Hardware::InterConnection::InterCon& intercon_;
+
+    // const model::TileExp::Graph& graph_;
     bool enable_mem_check_ = true;
     bool enable_spatial_check_ = true;
     bool enable_loopcount_check_ = true;
@@ -34,19 +46,23 @@ class Checker{
 
     public:
     Checker(const problem::TileExp::Workloads& workloads,
-        const mapping::TileExp::ExpMapping& mapping, // tree-based mapping
-        const model::TileExp::Graph& graph, // architecture
+        const mapping::TileExp::InterMapping& mapping, // tree-based mapping
+        // const model::TileExp::Graph& graph, // architecture
+        const Hardware::ArchTopology::ArchTopo& arch_topo, // architecture
+        const Hardware::InterConnection::InterCon& intercon, // interconnection
         bool enable_mem_check = true,
         bool enable_spatial_check = true,
         bool enable_loopcount_check = true,
         bool enable_operation_check = true)
-        : workloads_(workloads), mapping_(mapping), graph_(graph), 
+        : workloads_(workloads), mapping_(mapping), 
+        arch_topo_(arch_topo), intercon_(intercon),
         enable_mem_check_(enable_mem_check),
         enable_spatial_check_(enable_spatial_check),
         enable_loopcount_check_(enable_loopcount_check),
         enable_operation_check_(enable_operation_check){}
     
-    void check_memory_resource_constraint() const;
+    // void check_memory_resource_constraint() const;
+    void chech_mapping_loop_constraint() const;
     
     ~Checker(){}
 

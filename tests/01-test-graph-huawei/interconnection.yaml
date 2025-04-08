@@ -50,3 +50,31 @@ interconnection:
       type: BC
       read_bandwidth: 2
       write_bandwidth: 2
+
+    - name: C8
+      source: MainMemory
+      target: UB
+      type: BC
+      read_bandwidth: 2
+      write_bandwidth: 2
+    
+    - name: C9
+      source: Vector
+      target: UB
+      type: FD
+      read_bandwidth: 2
+      write_bandwidth: 2
+
+    - name: C10
+      source: Cube
+      target: Inner
+      type: Mesh
+      read_bandwidth: 2
+      write_bandwidth: 2
+
+    - name: C11
+      source: Vector
+      target: Inner
+      type: Ring
+      read_bandwidth: 2
+      write_bandwidth: 2

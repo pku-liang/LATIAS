@@ -51,3 +51,57 @@ else:
 
 
 ## search
+
+
+
+## Analysis Code
+
+    for tile
+        if not end dim:
+            recursive tile
+        else
+            for i in child.size():
+                currenet_scope_ = parent_scope or pipeline;
+                current_intra_ = spa or tmp
+                if child[i] == OP:
+                    Tensor = getIOTensor(node); 
+                    AddTensorToCurrentNode(); // 允许重合
+                    New TensorRange_tmp = AddTensorMapWithRange(); // child_tensor_map
+                    IODM(TensorRange_tmp, TensorRange[i])
+                    Latency(); // 3 stage
+                if child[i] == Scope:
+                    keep going
+                    //在这里需要聚集其下的tile的latency，供上级tile的spatial or temporal处理
+                if child[i] == Tile:
+                    run(child[i])
+                    getIOTensor(node); 
+                    AddTensorMapWithRange();
+                    IODM();
+                    Latency(); // 3 stage -- 5 stage, add sum, max
+                if child[i] == Transmit:
+                    getOTensor(); // for child[i-1]
+                    // ODM();
+                    Latency();
+
+
+author list
+
+    Chengrui Zhang <zhangchr@stu.pku.edu.cn>
+    Liancheng Jia <jlc@pku.edu.cn>
+    Chu Wang <2100013096@stu.pku.edu.cn>
+    Renze Chen <crz@pku.edu.cn>
+    Tianqi Li <jsnjltq@stu.pku.edu.cn>
+    Size Zheng <zheng.size@bytedance.com>
+    Xiuhong Li <lixiuhong@pku.edu.cn>
+    Shengen Yan <yansg@tsinghua.edu.cn>
+    Yu Wang <yu-wang@tsinghua.edu.cn>
+    Youwei Zhuo <youwei@pku.edu.cn>
+    Yun Liang <ericlyun@pku.edu.cn>
+
+title 
+
+    LATIAS: A General Performance Model for Spatial Architecture with complex topology and memory hierarchy.
+
+abs
+
+    We propose a general dataflow analysis model, LATIAS, to facilitate analysis of various workloads on complex spatial accelerator architectures. The key innovation of our framework is a unified graph-based representation to represent computational units, memory hierarchies, and interconnection, enabling general modeling of spatial accelerators with complex data paths and dataflow of operators mapped onto it. LATIAS employs the graph-based description and a general tile-centric notation to analyze data movement, latency, memory constraint and fusion possibility on this graph to assess workload performance on the target architecture and conducts SA-based design space exploration (DSE) to optimize tiling factors and fusion strategies. Finally, the DSE results are deployed on the Huawei's Ascend 910B series spatial accelerators to assess performance. Our experimental results show that the fused operators identified by our model achieve an XXX speedup over the official operator library, with a performance correlation of XXX with the official operator performance. 

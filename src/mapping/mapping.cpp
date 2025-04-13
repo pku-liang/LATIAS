@@ -55,7 +55,7 @@ Node::Node(
         }
     }
 
-    std::string fixed;
+    int fixed;
     if (config.exists("fixed")){
         config.lookupValue("fixed", fixed);
         if(fixed == 0) fixed_ = false;

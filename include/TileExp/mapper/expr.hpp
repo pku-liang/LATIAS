@@ -38,7 +38,9 @@ namespace TileExp {
         std::vector<std::string> tensor_dims_; // tensor dimension
         std::vector<DimRange> tensor_ranges_;
 
-        TensorMap();
+        TensorMap() = default;
+        TensorMap(std::string tensor_name, std::vector<std::string> tensor_dims):
+            tensor_name_(tensor_name), tensor_dims_(tensor_dims) {};
         TensorMap(std::string tensor_name, 
             std::vector<std::string> tensor_dims,
             std::vector<DimRange> tensor_ranges):

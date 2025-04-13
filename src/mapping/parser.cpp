@@ -271,8 +271,8 @@ std::unordered_map<std::string, std::pair<int, int> > Node::ParseFactors(
             // }
         }
 
-        int residual_end = 0;
-        // int residual_end = end;
+        // int residual_end = 0;
+        int residual_end = end;
         if (sm[4] != "")
         {
             // char* ptr = nullptr;

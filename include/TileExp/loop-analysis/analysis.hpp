@@ -1,6 +1,7 @@
 #pragma once 
 
 #include <vector> 
+#include <utility>
 #include <stack>
 
 #include "model/engine.hpp"
@@ -28,6 +29,7 @@ namespace TileExp{
 namespace Analysis{
 
 typedef std::string DimName;
+typedef std::pair<int, int> LoopStEd;
 
 class SingleMemLevel{
     public:
@@ -58,13 +60,19 @@ class EvaNode{
     std::vector<loop::TileExp::Descriptor> loopnests_;
     // private:
     std::vector<std::vector<loop::TileExp::Descriptor>> inherit_loopnests_; // inherit from the parent nodes
-    std::vector<TensorMap> input_tensors_;
-    std::vector<TensorMap> last_input_tensors_;
-    std::vector<TensorMap> output_tensors_;
+    std::unordered_map<std::string, TensorMap> input_tensors_;
+    std::unordered_map<std::string, TensorMap> output_tensors_;
+    std::unordered_map<std::string, TensorMap> tensor_tmp_;
+    std::unordered_map<std::string, TensorMap> last_input_tensors_;
+    int64_t copyin_latency;
+    int64_t copyout_latency;
+    int64_t process_latency;
     // std::vector<TensorMap> last_output_tensors_;
     mutable EvaNode* parent_ = nullptr;
     std::vector<EvaNode*> children_;
     bool analysis_fine_gran_ = true;
+    std::unordered_map<std::string, std::pair<int, int>> node_dim_bound_; // dim_name, [start, end]
+    // 说明当前节点的对应dim+1，对应的实际范围增加的范围，此处会有由于尾块导致的不准确，暂时忽略 -- TBD
     std::map<std::string, int> dim_offset_;
     
     public:
@@ -90,10 +98,23 @@ class EvaNode{
         dim_offset_[dim_name] = dim_value;
     }
     std::map<std::string, int> get_dim_offset(){ return dim_offset_; }
-    void add_input_tensors(TensorMap tensormap){ input_tensors_.push_back(tensormap); }
-    void add_output_tensors(TensorMap tensormap){ output_tensors_.push_back(tensormap); }
-    std::vector<TensorMap> get_input_tensors(){ return input_tensors_; }
-    std::vector<TensorMap> get_output_tensors(){ return output_tensors_; }
+    void add_input_tensors(TensorMap tensormap, std::string name){ input_tensors_[name] = tensormap; }
+    void add_output_tensors(TensorMap tensormap, std::string name){ output_tensors_[name] = tensormap; }
+    TensorMap get_input_tensors(std::string name){ return input_tensors_[name]; }
+    TensorMap get_output_tensors(std::string name){ return output_tensors_[name]; }
+    
+    void updateTensor(std::unordered_map<std::string, TensorMap> input_tensors, std::unordered_map<std::string, TensorMap> output_tensors){
+        for (auto& input_tensor: input_tensors){
+            auto tensor_name = input_tensor.first;
+            auto tensor_map = input_tensor.second;
+            TILEEXP_ASSERT(input_tensors_.insert({tensor_name, tensor_map}).second,"insert tensor fail");
+        }
+        for (auto& output_tensor: output_tensors){
+            auto tensor_name = output_tensor.first;
+            auto tensor_map = output_tensor.second;
+            TILEEXP_ASSERT(output_tensors_.insert({tensor_name, tensor_map}).second,"insert tensor fail");
+        }
+    }
 
     // reset loopnest, tensors
     void reset(){
@@ -101,6 +122,7 @@ class EvaNode{
         input_tensors_.clear();
         last_input_tensors_.clear();
         output_tensors_.clear();
+        tensor_tmp_.clear();
     }
 
     void PrintLoop() const;
@@ -193,21 +215,38 @@ class PerfAnalysis: public Visitor{
     public:
     Evaluator& evaluator_;
     EvaNode* current_node_;
+    bool is_init_ = false;
+    bool is_get_offset_ = false;
+    // bool is_init_tensor
     // for store the current loop info
     std::vector<std::vector<loop::TileExp::Descriptor>> loop_vector_all_;
+    // std::vector<loop::TileExp::Descriptor> loop_vector_tmp_;
     // for store all the tensor info
-    std::vector<std::vector<TensorMap>> tensor_vector_all_;
+    std::vector<std::unordered_map<std::string, TensorMap>> tensor_vector_all_;
     std::vector<DimRange> dim_range_tmp_;
-    std::vector<TensorMap> tensor_map_tmp_;
-    int current_tile_idx = 0;
-    int data_movement = 0;
-        
+    std::unordered_map<std::string, TensorMap> tensor_map_tmp_;
+    int current_tile_idx = -1;
+    int64_t data_movement = 0;
+
+    // tmp
+    std::vector<loop::TileExp::Descriptor> current_loop_state_;
+    std::unordered_map<std::string, std::vector<LoopStEd>> current_dim_range_;
+    // std::unordered_map<std::string, std::vector<int>> current_offset_;
+    // 用于存放当前循环是否是最后一个循环
+    std::unordered_map<std::string, std::vector<bool>> vec_last_dim_;
+    std::unordered_map<std::string, std::vector<int>> current_offset_;
+    
+    std::vector<std::string> GetInOutTensor(std::string name);
+    std::map<std::string, std::vector<std::string> > GetDimName(std::vector<std::string> tensorName);
+
+    // 获取当前node下的循环
+    std::vector<loop::TileExp::Descriptor> getLoopVector(const Node* node);
     // 递归循环，用于表示不同loop dimension
-    void RecursiveLoop(const Node* node, unsigned current_loop_idx, bool is_last_loop);
+    void RecursiveLoop(const Node* node, std::vector<loop::TileExp::Descriptor> loop_vector, unsigned current_dim_idx, unsigned last_dim_idx, bool is_last_loop);
     // 获取当前循环下，每一个dimension的范围
     std::vector<DimRange> computeRange(const std::vector<std::vector<loop::TileExp::Descriptor>> loop_vector);
     // 获取当前循环下，相关的tensor的范围
-    std::vector<TensorMap> computeTensorRange(std::vector<DimRange>& dim_range);
+    std::unordered_map<std::string, TensorMap> computeTensorRange(std::vector<DimRange>& dim_range);
     // 计算当前循环下，tensor变化的范围，并更新data_movement
     void diffTensorRange(const std::vector<DimRange>& tensor_range);
     // 计算在对应数据搬运量下的延迟，每一个延迟包括搬入，计算，搬出，或搬入、计算
@@ -217,11 +256,27 @@ class PerfAnalysis: public Visitor{
     std::vector<int> transLatency();
 
     bool is_print_ = true;
+    void visitScopeLoop(const Node* node);
     void visitScope(const ScopeNode* node) override;
+    void visitTileLoop(const Node* node, unsigned current_loop_idx);
     void visitTile(const TileNode* node) override;
+    void visitOpLoop(const Node* node);
     void visitOp(const OpNode* node) override;
+    void visitTransLoop();
     void visitTrans(const TransNode* node) override;
     void run(const Node* root) override;
+    void initOffset(const Node* node);
+    void init(const Node* node);
+    void initTensor(const Node* node);
+    void getOffset(const Node* node);
+    bool isLastLoop(std::string dim_name);
+    void PrintDimLoop(std::string dim_name){
+        std::cout << "Loop Name: " << dim_name;
+        for (auto& loop: current_dim_range_[dim_name]){
+            std::cout << ", " << loop.first << " ";
+        }
+        std::cout << std::endl;
+    };
     friend class Evaluator;
     PerfAnalysis(Evaluator& evaluator, EvaNode* current_node): 
         evaluator_(evaluator), current_node_(current_node){}
@@ -229,36 +284,36 @@ class PerfAnalysis: public Visitor{
 
 
 
-class SimAnalysis: public Visitor{
-    public:
-    Evaluator& evaluator_;
-    EvaNode* current_node_;
-    bool is_print_ = true;
-    bool is_init_ = false;
-    bool is_get_offset_ = false;
-    std::vector<bool> vec_last_loop_;
-    std::vector<loop::TileExp::Descriptor> current_loop_state_;
-    std::map<std::string, std::vector<int>> dim_offset_all_;
-    std::vector< std::vector<TensorMap> > current_input_tensors_;
+// class SimAnalysis: public Visitor{
+//     public:
+//     Evaluator& evaluator_;
+//     EvaNode* current_node_;
+//     bool is_print_ = true;
+//     bool is_init_ = false;
+//     bool is_get_offset_ = false;
+//     std::vector<bool> vec_last_loop_;
+//     std::vector<loop::TileExp::Descriptor> current_loop_state_;
+//     std::map<std::string, std::vector<int>> dim_offset_all_;
+//     std::vector< std::vector<TensorMap> > current_input_tensors_;
 
-    std::vector<std::string> GetInOutTensor(std::string name);
-    std::map<std::string, std::vector<std::string> > GetDimName(std::vector<std::string> tensorName);
-    bool isLastLoop(std::vector<bool> vec_last_loop);
-    void visitTileLoop(const Node* node, unsigned current_loop_idx, bool is_last_loop);
-    void visitScopeLoop(const Node* node);
-    void visitOpLoop(const Node* node);
-    void visitTransLoop();
-    void visitScope(const ScopeNode* node) override;
-    void visitTile(const TileNode* node) override;
-    void visitOp(const OpNode* node) override;
-    void visitTrans(const TransNode* node) override;
-    void run(const Node* root) override;
-    friend class Evaluator;
-    SimAnalysis(Evaluator& evaluator, EvaNode* current_node): 
-        evaluator_(evaluator), current_node_(current_node){}
-    void Init(const Node* node);
-    void getOffset(const Node* node);
-};
+//     std::vector<std::string> GetInOutTensor(std::string name);
+//     std::map<std::string, std::vector<std::string> > GetDimName(std::vector<std::string> tensorName);
+//     bool isLastLoop(std::vector<bool> vec_last_loop);
+//     void visitTileLoop(const Node* node, unsigned current_loop_idx, bool is_last_loop);
+//     void visitScopeLoop(const Node* node);
+//     void visitOpLoop(const Node* node);
+//     void visitTransLoop();
+//     void visitScope(const ScopeNode* node) override;
+//     void visitTile(const TileNode* node) override;
+//     void visitOp(const OpNode* node) override;
+//     void visitTrans(const TransNode* node) override;
+//     void run(const Node* root) override;
+//     friend class Evaluator;
+//     SimAnalysis(Evaluator& evaluator, EvaNode* current_node): 
+//         evaluator_(evaluator), current_node_(current_node){}
+//     void Init(const Node* node);
+//     void getOffset(const Node* node);
+// };
 
 class GetMemInfo: public Visitor{
     public:

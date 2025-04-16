@@ -132,6 +132,7 @@ public:
     // virtual void display(std::string prefix, bool recursive, const SymbolTable* = nullptr, std::ostream& = std::cout) const; // TBD
     void add_child(const Node* child);
     void set_parent(const Node* parent) const {parent_ = parent;}
+    const Node* get_parent() const {return parent_;}
 
     void Print() const;
 

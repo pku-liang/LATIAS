@@ -84,18 +84,27 @@ else:
                     Latency();
 
 
+## init analysis
+
+1. 找到每一个OP的IO，分别加进analysis的producer和consumer中，其中OP也需要存放，包含OP name，address和具体的tensor
+2. 逐个查找每一个OP的Input的tensor，观测其是否存在于producer中
+    1. 如果存在，则逐个遍历OP list，查找到生产者的位置，将生产者-公共节点（除公共节点）的output_tensor添加上对应tensor，将公共节点-消费者（除公共节点）的input_tensor添加上对应tensor
+    2. 若不存在，则遍历全部父节点，为其input_tensor添加对应tensor
+3. 若访问到最后一个OP，则为其上的全部父节点的output_tensor添加对应output tensor
+
+
 author list
 
     Chengrui Zhang <zhangchr@stu.pku.edu.cn>
-    Liancheng Jia <jlc@pku.edu.cn>
     Chu Wang <2100013096@stu.pku.edu.cn>
-    Renze Chen <crz@pku.edu.cn>
     Tianqi Li <jsnjltq@stu.pku.edu.cn>
+    Renze Chen <crz@pku.edu.cn>
     Size Zheng <zheng.size@bytedance.com>
+    Liancheng Jia <jlc@pku.edu.cn>
     Xiuhong Li <lixiuhong@pku.edu.cn>
     Shengen Yan <yansg@tsinghua.edu.cn>
-    Yu Wang <yu-wang@tsinghua.edu.cn>
     Youwei Zhuo <youwei@pku.edu.cn>
+    Yu Wang <yu-wang@tsinghua.edu.cn>
     Yun Liang <ericlyun@pku.edu.cn>
 
 title 

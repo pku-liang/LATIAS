@@ -86,6 +86,7 @@ class EvaNode{
     std::unordered_map<std::string, int> last_dim_offset_;
     std::unordered_map<std::string, std::vector<StEd>> current_dim_range_;
     std::unordered_map<std::string, std::vector<StEd>> current_offset_;
+    std::unordered_map<std::string, int64_t> current_dim_skew_;
 
     std::vector<int> ori_start_;
     std::vector<int> current_start_;
@@ -141,6 +142,7 @@ class EvaNode{
         dim_offset_.clear();
         ori_start_.clear();
         current_start_.clear();
+        current_dim_skew_.clear();
     }
 
     void printLoop() const;
@@ -302,8 +304,11 @@ class PerfAnalysis: public Visitor{
     std::vector<std::unordered_map<std::string, TensorMap>> tensor_vector_all_;
     std::vector<DimRange> dim_range_tmp_;
     std::unordered_map<std::string, TensorMap> tensor_map_tmp_;
+    // dim skew用于计算在当前节点下，对应维度的基准偏移量
+    std::unordered_map<std::string, int64_t> dim_skew;
     int current_tile_idx_ = -1;
     int64_t data_movements_ = 0;
+
 
     // tmp
 

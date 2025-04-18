@@ -109,19 +109,19 @@ int main(int argc, char* argv[])
   if (TileExp::verbose_level)
     mapping_.Print();
 
-  bool enable_mem_check_ = true;
-  bool enable_spatial_check_ = true;
-  bool enable_operation_check_ = true;
-  // here we do not consider the loop count check since there might be some variables in our mapping
-  bool enable_loopcount_check_ = false; 
+  // bool enable_mem_check_ = true;
+  // bool enable_spatial_check_ = true;
+  // bool enable_operation_check_ = true;
+  // // here we do not consider the loop count check since there might be some variables in our mapping
+  // bool enable_loopcount_check_ = false; 
 
   // check
-  Check::TileExp::Checker checker_(workloads_instance_, mapping_, archTopo_, interCon_,  
-    enable_mem_check_, enable_spatial_check_, enable_loopcount_check_, enable_operation_check_);
+  // Check::TileExp::Checker checker_(workloads_instance_, mapping_, archTopo_, interCon_,  
+  //   enable_mem_check_, enable_spatial_check_, enable_loopcount_check_, enable_operation_check_);
 
-  checker_.check();
+  // checker_.check();
 
-  // // evaluate data movement, latency and energy consumption
+  // // evaluate data movement, latency and energy consumption -- currently containing checker
   TileExp::Analysis::Evaluator evaluator_(workloads_instance_, mapping_, archTopo_, interCon_);
 
   evaluator_.evaluate();

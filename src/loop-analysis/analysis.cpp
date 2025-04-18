@@ -537,19 +537,20 @@ int64_t PerfAnalysis::addCurrentTensor(bool is_input){
             auto tensor_dims = tensor_tmp.second.tensor_dims_;
             std::unordered_map<std::string, DimRange> dim_range_map;
             for(auto &dim_name : tensor_dims){
+                auto skew = dim_skew[dim_name];
                 StEd dim_range;
                 if (current_node_->current_dim_range_[dim_name].size() > 0) {
                     dim_range = current_node_->current_dim_range_[dim_name].back();
                     auto offset_tmp = current_node_->current_offset_[dim_name].back();
-                    dim_range.first *= offset_tmp.first;
-                    dim_range.second = (dim_range.second - 1) * offset_tmp.first + offset_tmp.second;
+                    dim_range.first = dim_range.first * offset_tmp.first + skew;
+                    dim_range.second = (dim_range.second - 1) * offset_tmp.first + offset_tmp.second + skew;
                 }
                 else {
                     auto pair_tmp = BFSOffsetLoop(current_node_, dim_name);
                     if (pair_tmp.second) {
                         auto offset_tmp = pair_tmp.first.first;
                         auto loop_tmp = pair_tmp.first.second;
-                        dim_range = std::pair<int, int>(0, offset_tmp.first * (loop_tmp.second - 1) + offset_tmp.second);
+                        dim_range = std::pair<int, int>(skew, skew + offset_tmp.first * (loop_tmp.second - 1) + offset_tmp.second);
                     }
                     else TILEEXP_ASSERT(false, "BFS fail");
                 }
@@ -559,7 +560,8 @@ int64_t PerfAnalysis::addCurrentTensor(bool is_input){
             TensorMap inputTensorMap(tensor_name, tensor_dims, dim_range_map);
             // 不对root节点进行数据搬运计算
             if(current_node_->get_parent() != nullptr){
-                data_movements_tmp += TileExp::calTensorMapDM(current_node_->input_tensors_[tensor_name], inputTensorMap);
+                data_movements_tmp += TileExp::calTensorMapDM(current_node_->input_tensors_[tensor_name], inputTensorMap); 
+                // data_movements_tmp += TileExp::calTensorMapDM(inputTensorMap);
             }
             current_node_->input_tensors_[tensor_name] = inputTensorMap;
         }
@@ -570,19 +572,20 @@ int64_t PerfAnalysis::addCurrentTensor(bool is_input){
             auto tensor_dims = tensor_tmp.second.tensor_dims_;
             std::unordered_map<std::string, DimRange> dim_range_map;
             for(auto &dim_name : tensor_dims){
+                auto skew = dim_skew[dim_name];
                 StEd dim_range;
                 if (current_node_->current_dim_range_[dim_name].size() > 0) {
                     dim_range = current_node_->current_dim_range_[dim_name].back();
                     auto offset_tmp = current_node_->current_offset_[dim_name].back();
-                    dim_range.first *= offset_tmp.first;
-                    dim_range.second = (dim_range.second - 1) * offset_tmp.first + offset_tmp.second;
+                    dim_range.first = dim_range.first * offset_tmp.first + skew;
+                    dim_range.second = skew + (dim_range.second - 1) * offset_tmp.first + offset_tmp.second;
                 }
                 else {
                     auto pair_tmp = BFSOffsetLoop(current_node_, dim_name);
                     if (pair_tmp.second) {
                         auto offset_tmp = pair_tmp.first.first;
                         auto loop_tmp = pair_tmp.first.second;
-                        dim_range = std::pair<int, int>(0, offset_tmp.first * (loop_tmp.second - 1) + offset_tmp.second);
+                        dim_range = std::pair<int, int>(skew, skew + offset_tmp.first * (loop_tmp.second - 1) + offset_tmp.second);
                     }
                     else TILEEXP_ASSERT(false, "BFS fail");
                 }
@@ -636,6 +639,7 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
         loop_end = current_node_->loopnests_[current_dim_idx].end; 
     }
     
+    current_node_->current_dim_skew_[dim_name_] = 0;
     // 此处可简化加快 -- 0， 0->1，n-1->n -- 暂不实现
     // 此处需要添加当前loop的起始结束的信息，在PerfAnalysis中添加，如此可以计算出当前节点和子节点对应的范围
     for (; *loop_start < loop_end; *loop_start += loop_stride){
@@ -648,7 +652,7 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
         current_node_->current_offset_[dim_name_].push_back(curr_offset_tmp);
         current_node_->ori_start_.push_back(ori_start);
         current_node_->current_start_.push_back(*loop_start);
-        current_node_->node_dim_bound_[dim_name_] = current_tile_loop_range;
+        // current_node_->node_dim_bound_[dim_name_] = current_tile_loop_range;
         
         // *** 在最内层的dim中的计算当前级别的tile的IO张量信息对应的搬运量，每次都需要重新计算，并保留结果，供下次计算做覆盖
         if (current_dim_idx == dim_bound - 1 && isFirstLoop(current_node_->ori_start_, current_node_->current_start_)){
@@ -656,12 +660,8 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
             auto input_dm = addCurrentTensor(true);
             // output
             auto output_dm = addCurrentTensor(false);
-            if(input_dm != 0){
-                std::cout << current_node_->ori_node_->target_level_name << ": Input Tensor Data Movement: " << input_dm << std::endl;
-            }
-            if(output_dm != 0){
-                std::cout << current_node_->ori_node_->target_level_name << ": Output Tensor Data Movement: " << output_dm << std::endl;
-            }
+            std::cout << current_node_->ori_node_->target_level_name << ": Input Tensor Data Movement: " << input_dm << std::endl;
+            std::cout << current_node_->ori_node_->target_level_name << ": Output Tensor Data Movement: " << output_dm << std::endl;
             data_movements_ += input_dm + output_dm;
         }
 
@@ -721,9 +721,13 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
         current_node_->current_dim_range_[dim_name_].pop_back();
         current_node_->ori_start_.pop_back();
         current_node_->current_start_.pop_back();
+        current_node_->current_dim_skew_[dim_name_] += current_node_->dim_offset_[dim_name_];
+        dim_skew[dim_name_] += current_node_->dim_offset_[dim_name_];
         // current_loop_state_.pop_back();
     }
     
+    dim_skew[dim_name_] -= current_node_->current_dim_skew_[dim_name_];
+
     if (current_dim_idx == 0){
         current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
     }

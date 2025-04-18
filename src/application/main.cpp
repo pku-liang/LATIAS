@@ -126,5 +126,7 @@ int main(int argc, char* argv[])
 
   evaluator_.evaluate();
 
+  if (TileExp::verbose_level) evaluator_.Print();
+
   return 0;
 } 

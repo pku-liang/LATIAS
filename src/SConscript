@@ -118,6 +118,7 @@ lib_sources = Split("""
 ./model/interconnection.cpp
 ./common.cpp
 ./mapper/checker.cpp
+./mapper/expr.cpp
 ./loop-analysis/analysis.cpp
 """)
 

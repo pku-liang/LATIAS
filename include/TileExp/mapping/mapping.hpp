@@ -17,7 +17,7 @@
 
 
 using Symbol::SymbolTable;
-using TileExp::Range;
+// using TileExp::Range;
 using TileExp::TensorMap; 
 
 namespace mapping{

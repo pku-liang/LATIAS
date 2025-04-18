@@ -7,8 +7,12 @@
 #include <set>
 #include <functional>
 #include <iostream>
+#include <utility>
+#include <cstdint>
+#include <algorithm>
 
 #include "TileExp/mapper/symbol.hpp"
+#include "TileExp/common.hpp"
 
 namespace TileExp {
     const int ERROR_OUT=1;
@@ -21,17 +25,20 @@ namespace TileExp {
     // struct Range;
     
     struct DimRange{
-        std::string dim_name_; // tensor dimension
-        int64_t low_bound_;
-        int64_t high_bound_;
+        std::string dim_name_;
+        int low_bound_ = 0;
+        int high_bound_ = 0;
         std::string target_mem_level_;
-        
+
+        DimRange() = default;
+        DimRange(std::string dim_name, std::pair<int, int> range):
+            dim_name_(dim_name), low_bound_(range.first), high_bound_(range.second) {};
     };
 
     struct TensorMap{
         std::string tensor_name_;
         std::vector<std::string> tensor_dims_; // tensor dimension
-        std::vector<DimRange> tensor_ranges_;
+        std::unordered_map<std::string, DimRange> dim_ranges_;
 
         TensorMap() = default;
         TensorMap(std::string tensor_name, std::vector<std::string> tensor_dims):
@@ -39,8 +46,8 @@ namespace TileExp {
 
         TensorMap(std::string tensor_name, 
             std::vector<std::string> tensor_dims,
-            std::vector<DimRange> tensor_ranges):
-            tensor_name_(tensor_name), tensor_dims_(tensor_dims), tensor_ranges_(tensor_ranges) {}
+            std::unordered_map<std::string, DimRange> dim_ranges):
+            tensor_name_(tensor_name), tensor_dims_(tensor_dims), dim_ranges_(dim_ranges) {}
 
         void add_dim(); // TBD
         
@@ -48,6 +55,8 @@ namespace TileExp {
 
     // need overload TensorMap add function
     // TensorMap operator+(const TensorMap& tensor_map1, const TensorMap& tensor_map2);
-    int64_t addTensorMap(const TensorMap& tensor_map1, const TensorMap& tensor_map2);
+    // int64_t addTensorMap(const TensorMap& tensor_map1, const TensorMap& tensor_map2);
+    int64_t calTensorMapDM(const TensorMap& before, const TensorMap& after);
+    int64_t calTensorMapDM(const TensorMap& after);
 
 } // namespace TileExp

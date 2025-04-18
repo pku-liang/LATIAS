@@ -3,6 +3,7 @@
 #include <vector> 
 #include <utility>
 #include <stack>
+#include <queue>
 
 #include "model/engine.hpp"
 #include "TileExp/problem/problem.hpp"
@@ -30,7 +31,13 @@ namespace TileExp{
 namespace Analysis{
 
 typedef std::string DimName;
-typedef std::pair<int, int> LoopStEd;
+typedef std::pair<int, int> StEd;
+typedef std::pair<StEd, StEd> StEd_pair;
+
+class EvaNode;
+// offset, loop
+std::pair<StEd_pair, bool> BFSOffsetLoop(EvaNode* node, std::string dim_name);
+
 
 class SingleMemLevel{
     public:
@@ -75,7 +82,14 @@ class EvaNode{
     bool analysis_fine_gran_ = true;
     std::unordered_map<std::string, std::pair<int, int>> node_dim_bound_; // dim_name, [start, end]
     // 说明当前节点的对应dim+1，对应的实际范围增加的范围，此处会有由于尾块导致的不准确，暂时忽略 -- TBD
-    std::map<std::string, int> dim_offset_;
+    std::unordered_map<std::string, int> dim_offset_;
+    std::unordered_map<std::string, int> last_dim_offset_;
+    std::unordered_map<std::string, std::vector<StEd>> current_dim_range_;
+    std::unordered_map<std::string, std::vector<StEd>> current_offset_;
+
+    std::vector<int> ori_start_;
+    std::vector<int> current_start_;
+
     
     public:
     EvaNode(const Node* node): ori_node_(node){
@@ -91,20 +105,18 @@ class EvaNode{
     std::vector<EvaNode*> get_children() { return children_; }
     void add_inherit_loopnest(std::vector<loop::TileExp::Descriptor> loopnest){ inherit_loopnests_.push_back(loopnest); }
     std::vector<std::vector<loop::TileExp::Descriptor>> get_inherit_loopnest(){ return inherit_loopnests_; }
-    // void clear_IO_tensors(){ 
-    //     input_tensors_.clear(); 
-    //     output_tensors_.clear(); 
-    // }
+
     void initDimOffset();
-    void add_dim_offset(std::string dim_name, int dim_value){
-        dim_offset_[dim_name] = dim_value;
-    }
-    std::map<std::string, int> get_dim_offset(){ return dim_offset_; }
+    void add_dim_offset(std::string dim_name, int dim_value){ dim_offset_[dim_name] = dim_value; }
+    void add_last_dim_offset(std::string dim_name, int dim_value){ last_dim_offset_[dim_name] = dim_value; }
+    std::unordered_map<std::string, int> get_dim_offset(){ return dim_offset_; }
+    std::unordered_map<std::string, int> get_last_dim_offset(){ return last_dim_offset_; }
     void add_input_tensors(TensorMap tensormap, std::string name){ input_tensors_[name] = tensormap; }
     void add_output_tensors(TensorMap tensormap, std::string name){ output_tensors_[name] = tensormap; }
     TensorMap get_input_tensors(std::string name){ return input_tensors_[name]; }
     TensorMap get_output_tensors(std::string name){ return output_tensors_[name]; }
-    
+    // add tensor to current node, and compute Data Movements
+
     void updateTensor(std::unordered_map<std::string, TensorMap> input_tensors, std::unordered_map<std::string, TensorMap> output_tensors){
         for (auto& input_tensor: input_tensors){
             auto tensor_name = input_tensor.first;
@@ -125,6 +137,10 @@ class EvaNode{
         last_input_tensors_.clear();
         output_tensors_.clear();
         tensor_tmp_.clear();
+        last_dim_offset_.clear();
+        dim_offset_.clear();
+        ori_start_.clear();
+        current_start_.clear();
     }
 
     void printLoop() const;
@@ -145,7 +161,7 @@ class Evaluator{
 
     std::vector<MemLevel> mem_levels_;
 
-    std::uint64_t data_movements_ = 0; // bits
+    int64_t data_movements_ = 0; // bits
     double latency_ = 0.0;
     double energy_ = 0.0;
 
@@ -188,6 +204,10 @@ class Evaluator{
     void init_analysis();
     void analysis();
     void analysis_latias();
+
+    void Print(){
+        std::cout << "Total DataMovement: " << data_movements_ << std::endl;
+    }
 
     // friend class ResetFunc;
     // void evaluate_loop_count() const;
@@ -253,6 +273,8 @@ class InitAnalysis: public Visitor{
     void addParentTensor(EvaNode* source, TensorMap tensorMap, bool is_input);
     void addParentTensor(std::vector<EvaNode*> path, TensorMap tensorMap, bool is_input);
     void printRootIOTensor();
+    loop::TileExp::Descriptor findLoop(std::string name, std::vector<loop::TileExp::Descriptor> loops);
+    std::pair<loop::TileExp::Descriptor, bool> findChildLoop(std::string name, std::vector<loop::TileExp::Descriptor> loops);
 
     CommonNodePath findCommonNode(EvaNode* source, EvaNode* target);
     std::vector<std::string> getInOutTensor(std::string name);
@@ -280,16 +302,16 @@ class PerfAnalysis: public Visitor{
     std::vector<std::unordered_map<std::string, TensorMap>> tensor_vector_all_;
     std::vector<DimRange> dim_range_tmp_;
     std::unordered_map<std::string, TensorMap> tensor_map_tmp_;
-    int current_tile_idx = -1;
-    int64_t data_movement = 0;
+    int current_tile_idx_ = -1;
+    int64_t data_movements_ = 0;
 
     // tmp
+
     std::vector<loop::TileExp::Descriptor> current_loop_state_;
-    std::unordered_map<std::string, std::vector<LoopStEd>> current_dim_range_;
-    // std::unordered_map<std::string, std::vector<int>> current_offset_;
+    // std::unordered_map<std::string, std::vector<StEd>> current_dim_range_;
+    // std::unordered_map<std::string, std::vector<StEd>> current_offset_;
     // 用于存放当前循环是否是最后一个循环
     std::unordered_map<std::string, std::vector<bool>> vec_last_dim_;
-    std::unordered_map<std::string, std::vector<int>> current_offset_;
     
     std::vector<std::string> getInOutTensor(std::string name);
     std::map<std::string, std::vector<std::string> > getDimName(std::vector<std::string> tensorName);
@@ -325,9 +347,12 @@ class PerfAnalysis: public Visitor{
     // void initTensor(const Node* node);
     // void getOffset(const Node* node);
     bool isLastLoop(std::string dim_name);
+    bool isFirstLoop(std::vector<int> loop_ori, std::vector<int> loop_current);
+    int64_t addCurrentTensor(bool is_input);
+
     void PrintDimLoop(std::string dim_name){
         std::cout << "Loop Name: " << dim_name;
-        for (auto& loop: current_dim_range_[dim_name]){
+        for (auto& loop: current_node_->current_dim_range_[dim_name]){
             std::cout << ", " << loop.first << " ";
         }
         std::cout << std::endl;

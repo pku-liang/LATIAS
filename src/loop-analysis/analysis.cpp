@@ -297,6 +297,56 @@ void InitAnalysis::initOffset(const Node* node){
     current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
 }
 
+
+// 找到当前节点下对应维度，最近的offset
+std::pair<StEd_pair, bool> BFSOffsetLoop(EvaNode* node, std::string dim_name){
+    if (!node) TILEEXP_ASSERT(false, "BFS input node is nullptr");
+
+    std::queue<EvaNode*> q;
+    q.push(node);
+
+    while (!q.empty()) {
+        EvaNode* curr = q.front();
+        q.pop();
+
+        if (curr->get_dim_offset().count(dim_name)){
+            StEd offset_pair(curr->get_dim_offset()[dim_name], curr->get_last_dim_offset()[dim_name]);
+            StEd loop_pair;
+            for (auto tmp_loop: curr->loopnests_){
+                if (tmp_loop.name_ == dim_name){
+                    loop_pair = StEd(tmp_loop.end, tmp_loop.residual_end);
+                }
+            }
+            StEd_pair result_pair(offset_pair, loop_pair);
+            return std::pair<StEd_pair, bool>(result_pair, true);
+        }
+
+        for (auto child : curr->get_children()) {
+            if (child) q.push(child);
+        }
+    }
+    // TILEEXP_ASSERT(false, "BFS fail");
+    return std::pair<StEd_pair, bool>(StEd_pair(), false);
+}
+
+
+loop::TileExp::Descriptor InitAnalysis::findLoop(std::string name, std::vector<loop::TileExp::Descriptor> loops){
+    // find loop
+    for (auto loop: loops){
+        if (loop.name_ == name) return loop;
+    }
+    TILEEXP_ASSERT(false, "findLoop fail");
+}
+
+std::pair<loop::TileExp::Descriptor, bool> InitAnalysis::findChildLoop(std::string name, std::vector<loop::TileExp::Descriptor> loops){
+    // find loop
+    for (auto loop: loops){
+        if (loop.name_ == name) return std::pair<loop::TileExp::Descriptor, bool>(loop, true);
+    }
+    return std::pair<loop::TileExp::Descriptor, bool>(loop::TileExp::Descriptor(), false);
+    // TILEEXP_ASSERT(false, "findLoop fail");
+}
+
 // offset 表示当前节点的循环计数+1时，对应dim的变化
 void InitAnalysis::getOffset(const Node* node){
 
@@ -306,31 +356,34 @@ void InitAnalysis::getOffset(const Node* node){
         node->get_children()[i]->accept(this);
     }
     // for current_node_
-    std::map<std::string, int> tmp_dim_offset_;
+    // std::map<std::string, int> tmp_dim_offset_;
+    std::set<std::string> current_node_dim_name_;
+    for (auto tmp_loop: node->loopnests_){
+        current_node_dim_name_.insert(tmp_loop.name_);
+    }
+
     if (node->get_children().size() != 0){
-        if(node->get_type() == Node::Scope){ }
+        if(node->get_type() == Node::Scope){
+            // *** 这里我们不对scope节点进行处理，如果在计算DM时用到了scope节点，则仅需要对其子节点进行遍历找到对应offset
+        }
         else{
-            for (unsigned i = 0; i < node->get_children().size(); i++){
-                auto child = node->get_children()[i];
-                auto eva_child = current_node_->get_children()[i];
-                // scope: 如果是scope的话，只需要读取scope的孩子的offset即可
-                if(child->get_type() == Node::Scope){
-                    for (unsigned j = 0; j < child->get_children().size(); j++){
-                        auto grandson = child->get_children()[j];
-                        auto eva_grandson = eva_child->get_children()[j];
-                        for (auto tmp_loop: grandson->loopnests_){
-                            current_node_->add_dim_offset(tmp_loop.name_, 
-                                    tmp_loop.end * eva_grandson->get_dim_offset()[tmp_loop.name_]);
-                        }
-                    }
+            // 这里需要对当前节点的offset进行计算
+            for (auto tmp_loop: node->loopnests_){
+                bool dim_found = false;
+                for (unsigned i = 0; i < node->get_children().size(); i++){
+                    // auto child = node->get_children()[i];
+                    auto eva_child = current_node_->get_children()[i];
+                    auto pair_tmp = BFSOffsetLoop(eva_child, tmp_loop.name_);
+                    // 如果在当前子节点下没找到当前dim，则到下一个
+                    if (!pair_tmp.second) continue; 
+                    dim_found = true;
+                    auto offset_tmp = pair_tmp.first.first;
+                    auto loop_tmp = pair_tmp.first.second;
+                    current_node_->add_dim_offset(tmp_loop.name_, loop_tmp.first * offset_tmp.first);
+                    current_node_->add_last_dim_offset(tmp_loop.name_, (loop_tmp.second - 1) * offset_tmp.first + offset_tmp.second);
+                    break;
                 }
-                // tile
-                else {
-                    for (auto tmp_loop: child->loopnests_){
-                        current_node_->add_dim_offset(tmp_loop.name_, 
-                                                    tmp_loop.end * eva_child->get_dim_offset()[tmp_loop.name_]);
-                    }
-                }
+                TILEEXP_ASSERT(dim_found, "Current child has no related dim found");
             }
         }
     }
@@ -339,6 +392,7 @@ void InitAnalysis::getOffset(const Node* node){
         else{
             for (auto tmp_loop: node->loopnests_){
                 current_node_->add_dim_offset(tmp_loop.name_, 1);
+                current_node_->add_last_dim_offset(tmp_loop.name_, 1);
             }
         }
     }
@@ -347,9 +401,11 @@ void InitAnalysis::getOffset(const Node* node){
 }
 
 
+
 void Evaluator::analysis_latias(){
     PerfAnalysis pass_(*this, eva_root_);
     pass_.run(root_);
+    data_movements_ = pass_.data_movements_;
 }
 
 void PerfAnalysis::run(const Node* root){
@@ -369,24 +425,29 @@ void PerfAnalysis::init(const Node* root){
 
 
 void PerfAnalysis::visitScope(const ScopeNode* node){
-    // if(is_get_offset_){ getOffset(node); return; }
-    visitScopeLoop(node);
+    if (node == nullptr) TILEEXP_ASSERT(false, "ScopeNode is nullptr");
+    // visitScopeLoop(node);
+    for (unsigned i = 0 ; i < node->get_children().size(); i++){
+        current_node_ = current_node_->get_children()[i];
+        node->get_children()[i]->accept(this);
+    }
+    current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
 }
 
 void PerfAnalysis::visitTile(const TileNode* node){
-    // if(is_get_offset_){ getOffset(node); return; }
     visitTileLoop(node, 0);
 }
 
 void PerfAnalysis::visitOp(const OpNode* node){
-    // if(is_get_offset_){ getOffset(node); return; }
-    visitOpLoop(node);
+    if (node == nullptr) TILEEXP_ASSERT(false, "OpNode is nullptr");
+    // visitOpLoop(node);
+    current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
 }
 
 void PerfAnalysis::visitTrans(const TransNode* node){
-    // if(is_get_offset_){ getOffset(node); return; }
     if (node == nullptr) TILEEXP_ASSERT(false, "TransNode is nullptr");
-    visitTransLoop();
+    current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
+    // visitTransLoop();
 }
 
 
@@ -397,16 +458,17 @@ void PerfAnalysis::visitTrans(const TransNode* node){
 // 每一个tile都会根据自身的tiling factor，对每一个child的io tensor进行维度变化
 // 目前只考虑输入时op节点倍数的情况
 void PerfAnalysis::visitOpLoop(const Node* node){
-    
-    auto dim_bound = node->loopnests_.size();
+    if (node == nullptr) TILEEXP_ASSERT(false, "OpNode is nullptr");
 
-    for (unsigned i = 0; i < dim_bound; i++){ 
-        current_loop_state_.push_back(current_node_->loopnests_[i]);
-    }
+    // auto dim_bound = node->loopnests_.size();
 
-    std::string name = nameSub(node->name_);
-    std::vector<std::string> tensorName = getInOutTensor(name);
-    std::map<std::string, std::vector<std::string> > dimName = getDimName(tensorName);
+    // for (unsigned i = 0; i < dim_bound; i++){ 
+    //     current_loop_state_.push_back(current_node_->loopnests_[i]);
+    // }
+
+    // std::string name = nameSub(node->name_);
+    // std::vector<std::string> tensorName = getInOutTensor(name);
+    // std::map<std::string, std::vector<std::string> > dimName = getDimName(tensorName);
 
     // // 每一个循环为当前OP节点添加一个tensormap -- 需要改为input dim和output dim
     // // 无需这么麻烦，只需要每个tile都能获取到对应子节点所包含的tensor即可 -- TBD
@@ -466,6 +528,83 @@ void PerfAnalysis::visitTransLoop(){
     current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
 }
 
+// 还没乘offset -- TBD -- done
+int64_t PerfAnalysis::addCurrentTensor(bool is_input){
+    int64_t data_movements_tmp = 0;
+    if(is_input){
+        for (auto &tensor_tmp: current_node_->input_tensors_){
+            auto tensor_name = tensor_tmp.first;
+            auto tensor_dims = tensor_tmp.second.tensor_dims_;
+            std::unordered_map<std::string, DimRange> dim_range_map;
+            for(auto &dim_name : tensor_dims){
+                StEd dim_range;
+                if (current_node_->current_dim_range_[dim_name].size() > 0) {
+                    dim_range = current_node_->current_dim_range_[dim_name].back();
+                    auto offset_tmp = current_node_->current_offset_[dim_name].back();
+                    dim_range.first *= offset_tmp.first;
+                    dim_range.second = (dim_range.second - 1) * offset_tmp.first + offset_tmp.second;
+                }
+                else {
+                    auto pair_tmp = BFSOffsetLoop(current_node_, dim_name);
+                    if (pair_tmp.second) {
+                        auto offset_tmp = pair_tmp.first.first;
+                        auto loop_tmp = pair_tmp.first.second;
+                        dim_range = std::pair<int, int>(0, offset_tmp.first * (loop_tmp.second - 1) + offset_tmp.second);
+                    }
+                    else TILEEXP_ASSERT(false, "BFS fail");
+                }
+                DimRange dimRange(dim_name, dim_range);
+                dim_range_map[dim_name] = dimRange;
+            }
+            TensorMap inputTensorMap(tensor_name, tensor_dims, dim_range_map);
+            // 不对root节点进行数据搬运计算
+            if(current_node_->get_parent() != nullptr){
+                data_movements_tmp += TileExp::calTensorMapDM(current_node_->input_tensors_[tensor_name], inputTensorMap);
+            }
+            current_node_->input_tensors_[tensor_name] = inputTensorMap;
+        }
+    }
+    else{
+        for (auto &tensor_tmp: current_node_->output_tensors_){
+            auto tensor_name = tensor_tmp.first;
+            auto tensor_dims = tensor_tmp.second.tensor_dims_;
+            std::unordered_map<std::string, DimRange> dim_range_map;
+            for(auto &dim_name : tensor_dims){
+                StEd dim_range;
+                if (current_node_->current_dim_range_[dim_name].size() > 0) {
+                    dim_range = current_node_->current_dim_range_[dim_name].back();
+                    auto offset_tmp = current_node_->current_offset_[dim_name].back();
+                    dim_range.first *= offset_tmp.first;
+                    dim_range.second = (dim_range.second - 1) * offset_tmp.first + offset_tmp.second;
+                }
+                else {
+                    auto pair_tmp = BFSOffsetLoop(current_node_, dim_name);
+                    if (pair_tmp.second) {
+                        auto offset_tmp = pair_tmp.first.first;
+                        auto loop_tmp = pair_tmp.first.second;
+                        dim_range = std::pair<int, int>(0, offset_tmp.first * (loop_tmp.second - 1) + offset_tmp.second);
+                    }
+                    else TILEEXP_ASSERT(false, "BFS fail");
+                }
+                DimRange dimRange(dim_name, dim_range);
+                dim_range_map[dim_name] = dimRange;
+
+            }
+            TensorMap outputTensorMap(tensor_name, tensor_dims, dim_range_map);
+            data_movements_tmp += TileExp::calTensorMapDM(outputTensorMap);
+            current_node_->output_tensors_[tensor_name] = outputTensorMap;
+        }
+    }
+    return data_movements_tmp;
+}
+
+
+bool PerfAnalysis::isFirstLoop(std::vector<int> loop_ori, std::vector<int> loop_current){
+    for (unsigned i = 0; i < loop_ori.size(); i++){
+        if (loop_ori[i] != loop_current[i]) return false;
+    }
+    return true;
+}
 
 void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
     
@@ -484,6 +623,7 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
     int loop_stride = current_node_->loopnests_[current_dim_idx].stride;
     TILEEXP_ASSERT(loop_stride == 1, "currently only support stride = 1");
     
+    // 若该dim为空或者是该dim最后一个loop
     if (node->get_parent() == nullptr || isLastLoop(dim_name_)){ is_last_dim = true; }
     else{ is_last_dim = false; }
     
@@ -496,70 +636,91 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
         loop_end = current_node_->loopnests_[current_dim_idx].end; 
     }
     
-    // *** 在最内层的dim中的计算当前级别的tile的IO张量信息对应的搬运量，每次都需要重新计算，并保留结果，供下次计算做覆盖
-    
-
     // 此处可简化加快 -- 0， 0->1，n-1->n -- 暂不实现
     // 此处需要添加当前loop的起始结束的信息，在PerfAnalysis中添加，如此可以计算出当前节点和子节点对应的范围
     for (; *loop_start < loop_end; *loop_start += loop_stride){
         if (*loop_start + loop_stride < loop_end){ vec_last_dim_[dim_name_].push_back(false); }
         else { vec_last_dim_[dim_name_].push_back(true); }
         
-        std::pair<int, int> loop_range = {*loop_start, loop_end};
-        current_dim_range_[dim_name_].push_back(loop_range);
-        current_offset_[dim_name_].push_back(current_node_->dim_offset_[dim_name_]);
-        current_node_->node_dim_bound_[dim_name_] = loop_range;
+        std::pair<int, int> current_tile_loop_range = {ori_start, loop_end};
+        StEd curr_offset_tmp = StEd(current_node_->dim_offset_[dim_name_], current_node_->last_dim_offset_[dim_name_]);
+        current_node_->current_dim_range_[dim_name_].push_back(current_tile_loop_range);
+        current_node_->current_offset_[dim_name_].push_back(curr_offset_tmp);
+        current_node_->ori_start_.push_back(ori_start);
+        current_node_->current_start_.push_back(*loop_start);
+        current_node_->node_dim_bound_[dim_name_] = current_tile_loop_range;
         
+        // *** 在最内层的dim中的计算当前级别的tile的IO张量信息对应的搬运量，每次都需要重新计算，并保留结果，供下次计算做覆盖
+        if (current_dim_idx == dim_bound - 1 && isFirstLoop(current_node_->ori_start_, current_node_->current_start_)){
+            // input
+            auto input_dm = addCurrentTensor(true);
+            // output
+            auto output_dm = addCurrentTensor(false);
+            if(input_dm != 0){
+                std::cout << current_node_->ori_node_->target_level_name << ": Input Tensor Data Movement: " << input_dm << std::endl;
+            }
+            if(output_dm != 0){
+                std::cout << current_node_->ori_node_->target_level_name << ": Output Tensor Data Movement: " << output_dm << std::endl;
+            }
+            data_movements_ += input_dm + output_dm;
+        }
 
         if (current_dim_idx + 1 < dim_bound){
+            // change dimension
             visitTileLoop(node, current_dim_idx + 1);
         }
         else{
-            // *** 在这里根据子节点，获取子节点整体的latency
-            // AddChildTensorMap();
             for (unsigned i = 0 ; i < node->get_children().size(); i++){
                 current_node_ = current_node_->get_children()[i];
-                auto current_node_type = current_node_->ori_node_->get_type();
-                if (current_node_type == Node::Scope){
-                    node->get_children()[i]->accept(this);
-                    // AddLatency(); -- TBD
-                }
-                else if (current_node_type == Node::Op){
-                    // 获取子节点的io tensor
-                    auto& tensor_map_in = current_node_->input_tensors_;
-                    auto& tensor_map_out = current_node_->output_tensors_;
-                    // 根据current_dim_range_计算当前tensor的范围
-                    auto data_move = CalDataMove(tensor_map_in, tensor_map_out, node->loopnests_);
-                    AddDataMove(data_move);
-                    auto flops = CalFlops(tensor_map_in, tensor_map_out);
-                    // struct Latency -- int, int, int
-                    // 先计算搬运量带来的延迟，后根据interconnection计算 copyin, process, copyout的情况
-                    auto Latency = GetLatency(data_move, flops);
-                    // 前面需要一个child_latency的集合
-                    AddLatency(Latency);
-                    // 复原current_node_到当前节点
-                    current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
-                }
-                else if (current_node_type == Node::Tile){
-                    // 先遍历该tile的全部子节点
-                    node->get_children()[i]->accept(this);
-                    // 再计算该节点的分析
-                    auto tensor_map_in = &(current_node_->input_tensors_);
-                    auto tensor_map_out = &(current_node_->output_tensors_);
-                    // auto dim_range = GetDimRange(); // --TBD -- std::vector<std::string, std::pair<int, int>>
-                    auto data_move = CalDataMove(tensor_map_in, tensor_map_out, node->loopnests_);
-                    AddDataMove(data_move);
-                    auto flops = CalFlops(tensor_map_in, tensor_map_out);
-                    AddLatency(data_move, flops);
-                }
-                else if (current_node_type == Node::Trans){
-                    node->get_children()[i]->accept(this);
-                }
+                node->get_children()[i]->accept(this);
             }
+            // *** 在这里根据子节点，获取子节点整体的latency
+            // AddChildTensorMap();
+            // for (unsigned i = 0 ; i < node->get_children().size(); i++){
+            //     current_node_ = current_node_->get_children()[i];
+            //     auto current_node_type = current_node_->ori_node_->get_type();
+            //     if (current_node_type == Node::Scope){
+            //         node->get_children()[i]->accept(this);
+            //         // AddLatency(); -- TBD
+            //     }
+            //     else if (current_node_type == Node::Op){
+            //         // 获取子节点的io tensor
+            //         auto& tensor_map_in = current_node_->input_tensors_;
+            //         auto& tensor_map_out = current_node_->output_tensors_;
+            //         // 根据current_dim_range_计算当前tensor的范围
+            //         auto data_move = CalDataMove(tensor_map_in, tensor_map_out, node->loopnests_);
+            //         AddDataMove(data_move);
+            //         auto flops = CalFlops(tensor_map_in, tensor_map_out);
+            //         // struct Latency -- int, int, int
+            //         // 先计算搬运量带来的延迟，后根据interconnection计算 copyin, process, copyout的情况
+            //         auto Latency = GetLatency(data_move, flops);
+            //         // 前面需要一个child_latency的集合
+            //         AddLatency(Latency);
+            //         // 复原current_node_到当前节点
+            //         current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
+            //     }
+            //     else if (current_node_type == Node::Tile){
+            //         // 先遍历该tile的全部子节点
+            //         node->get_children()[i]->accept(this);
+            //         // 再计算该节点的分析
+            //         auto tensor_map_in = &(current_node_->input_tensors_);
+            //         auto tensor_map_out = &(current_node_->output_tensors_);
+            //         // auto dim_range = GetDimRange(); // --TBD -- std::vector<std::string, std::pair<int, int>>
+            //         auto data_move = CalDataMove(tensor_map_in, tensor_map_out, node->loopnests_);
+            //         AddDataMove(data_move);
+            //         auto flops = CalFlops(tensor_map_in, tensor_map_out);
+            //         AddLatency(data_move, flops);
+            //     }
+            //     else if (current_node_type == Node::Trans){
+            //         node->get_children()[i]->accept(this);
+            //     }
+            // }
         }
         vec_last_dim_[dim_name_].pop_back();
-        current_offset_[dim_name_].pop_back();
-        current_dim_range_[dim_name_].pop_back();
+        current_node_->current_offset_[dim_name_].pop_back();
+        current_node_->current_dim_range_[dim_name_].pop_back();
+        current_node_->ori_start_.pop_back();
+        current_node_->current_start_.pop_back();
         // current_loop_state_.pop_back();
     }
     
@@ -574,9 +735,6 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
 bool PerfAnalysis::isLastLoop(std::string dim_name){
     bool tmp = true;
     auto vec_last_loop = vec_last_dim_[dim_name];
-    // if(vec_last_loop.size() == 0){
-    //     return false;
-    // }
     for(auto last_loop: vec_last_loop){
         tmp = tmp && last_loop;
     }

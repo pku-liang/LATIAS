@@ -9,7 +9,7 @@ namespace ArchTopology{
 
 std::unordered_map<std::string, LevelType> String2LevelType = {
     {"Matrix", LevelType::Matrix},
-    {"Vectpr", LevelType::Vector},
+    {"Vector", LevelType::Vector},
     {"Buffer", LevelType::Buffer}
 };
 

@@ -438,16 +438,53 @@ void PerfAnalysis::visitTile(const TileNode* node){
     visitTileLoop(node, 0);
 }
 
+// 
 void PerfAnalysis::visitOp(const OpNode* node){
     if (node == nullptr) TILEEXP_ASSERT(false, "OpNode is nullptr");
-    // visitOpLoop(node);
+    // int64_t flops_tmp = 1;
+    std::unordered_map<std::string, int> dim_end;
+    
+    for (auto & loop: current_node_->loopnests_){
+        dim_end[loop.name_] = loop.end;
+    }
+
+    int64_t input_dm = 0;
+    for (auto &tensor: current_node_->input_tensors_){
+        auto tensor_name = tensor.first;
+        auto tensor_dims = tensor.second.tensor_dims_;
+        std::vector<int> tensor_data_movements;
+        for (auto &dim_name: tensor_dims){
+            tensor_data_movements.push_back(dim_end[dim_name]);
+        }
+        int64_t tmp = 1;
+        for (auto &dim: tensor_data_movements){
+            tmp *= dim;
+        }
+        input_dm += tmp;
+    }
+    // std::cout << current_node_->ori_node_->target_level_name << ": Input Tensor Data Movement: " << input_dm << std::endl;
+    int64_t output_dm = 0;
+    for (auto &tensor: current_node_->output_tensors_){
+        auto tensor_name = tensor.first;
+        auto tensor_dims = tensor.second.tensor_dims_;
+        std::vector<int> tensor_data_movements;
+        for (auto &dim_name: tensor_dims){
+            tensor_data_movements.push_back(dim_end[dim_name]);
+        }
+        int64_t tmp = 1;
+        for (auto &dim: tensor_data_movements){
+            tmp *= dim;
+        }
+        output_dm += tmp;
+    }
+    // std::cout << current_node_->ori_node_->target_level_name << ": Output Tensor Data Movement: " << output_dm << std::endl;
+    data_movements_ += output_dm + input_dm;
     current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
 }
 
 void PerfAnalysis::visitTrans(const TransNode* node){
     if (node == nullptr) TILEEXP_ASSERT(false, "TransNode is nullptr");
     current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
-    // visitTransLoop();
 }
 
 
@@ -461,15 +498,12 @@ void PerfAnalysis::visitOpLoop(const Node* node){
     if (node == nullptr) TILEEXP_ASSERT(false, "OpNode is nullptr");
 
     // auto dim_bound = node->loopnests_.size();
-
     // for (unsigned i = 0; i < dim_bound; i++){ 
     //     current_loop_state_.push_back(current_node_->loopnests_[i]);
     // }
-
     // std::string name = nameSub(node->name_);
     // std::vector<std::string> tensorName = getInOutTensor(name);
     // std::map<std::string, std::vector<std::string> > dimName = getDimName(tensorName);
-
     // // 每一个循环为当前OP节点添加一个tensormap -- 需要改为input dim和output dim
     // // 无需这么麻烦，只需要每个tile都能获取到对应子节点所包含的tensor即可 -- TBD
     // // 每一个node的属性内均需要包含tensor的vector
@@ -508,7 +542,6 @@ void PerfAnalysis::visitOpLoop(const Node* node){
     //         current_node_->input_tensors_.push_back(tensorMap);
     //     }
     // }
-
     // for (unsigned i = 0; i < dim_bound; i++){ 
     //     current_loop_state_.pop_back();
     // }

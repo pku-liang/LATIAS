@@ -41,10 +41,10 @@ double SRAMArea(std::uint64_t height, std::uint64_t width, std::uint64_t num_ban
   (void) num_ports;
   return 0;
 }
-//s
+
 double SRAMEnergy(std::uint64_t height, std::uint64_t width, std::uint64_t num_banks, std::uint64_t num_ports)
-{   
-  (void) num_banks; 
+{
+  (void) num_banks;
   (void) num_ports;
   
   // Eyeriss data points:

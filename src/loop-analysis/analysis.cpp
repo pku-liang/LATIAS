@@ -69,10 +69,6 @@ void Evaluator::get_mem_info(){
     // pass_.run(root_);
 }
 
-// void Evaluator::analysis(){
-//     SimAnalysis pass_(*this, eva_root_);
-//     pass_.run(root_);
-// }
 
 void Evaluator::init_analysis(){
     InitAnalysis pass_(*this, eva_root_);
@@ -280,8 +276,6 @@ void InitAnalysis::initOpTensor(const Node* node){
             }
         }
     }
-    //Trans -- nothing to do
-    // else{}
 
     current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
 }
@@ -462,7 +456,6 @@ void PerfAnalysis::visitOp(const OpNode* node){
         }
         input_dm += tmp;
     }
-    // std::cout << current_node_->ori_node_->target_level_name << ": Input Tensor Data Movement: " << input_dm << std::endl;
     int64_t output_dm = 0;
     for (auto &tensor: current_node_->output_tensors_){
         auto tensor_name = tensor.first;
@@ -477,7 +470,6 @@ void PerfAnalysis::visitOp(const OpNode* node){
         }
         output_dm += tmp;
     }
-    // std::cout << current_node_->ori_node_->target_level_name << ": Output Tensor Data Movement: " << output_dm << std::endl;
     data_movements_ += output_dm + input_dm;
     current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
 }
@@ -594,7 +586,6 @@ int64_t PerfAnalysis::addCurrentTensor(bool is_input){
             // 不对root节点进行数据搬运计算
             if(current_node_->get_parent() != nullptr){
                 data_movements_tmp += TileExp::calTensorMapDM(current_node_->input_tensors_[tensor_name], inputTensorMap); 
-                // data_movements_tmp += TileExp::calTensorMapDM(inputTensorMap);
             }
             current_node_->input_tensors_[tensor_name] = inputTensorMap;
         }
@@ -646,11 +637,6 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
     
     // 包含几个维度
     auto dim_bound = node->loopnests_.size();
-    
-    // // 如果当前tile的几个维度已经遍历完，则进行继续的DFS访问
-    // if (current_dim_idx == dim_bound){
-    //     return;
-    // }
 
     std::string dim_name_ = current_node_->loopnests_[current_dim_idx].name_;
     int ori_start = current_node_->loopnests_[current_dim_idx].start;
@@ -842,40 +828,6 @@ std::map<std::string, std::vector<std::string> > InitAnalysis::getDimName(std::v
     return res_dim_name;
 }
 
-// 递归循环，用于表示不同loop dimension
-void PerfAnalysis::RecursiveLoop(const Node* node, std::vector<loop::TileExp::Descriptor> loop_vector, unsigned current_dim_idx, unsigned last_dim_idx, bool is_last_loop){
-    if (last_dim_idx == current_dim_idx){
-        // 递归循环
-        return;
-        // RecursiveLoop(node, current_loop_idx + 1, last_loop_idx);
-    }
-    else{
-        // go to child-node
-        auto dim = loop_vector[current_dim_idx];
-
-        for (int i = dim.start; i < dim.end; i += dim.stride){
-            // update loop state
-            // current_loop_state_.push_back(dim);
-            // dim_offset_all_[dim.name_].push_back(current_node_->dim_offset_[dim.name_]);
-
-            // // update loop state
-            // current_node_->loopnests_[current_loop_idx].start = i;
-            // current_node_->loopnests_[current_loop_idx].end = i + dim.stride;
-            // current_node_->loopnests_[current_loop_idx].residual_end = 0;
-
-            // recursive loop
-            RecursiveLoop(node, loop_vector, current_dim_idx + 1, last_dim_idx, is_last_loop);
-
-            // // reset loop state
-            // current_node_->loopnests_[current_loop_idx].start = dim.start;
-            // current_node_->loopnests_[current_loop_idx].end = dim.end;
-            // current_node_->loopnests_[current_loop_idx].residual_end = dim.residual_end;
-        }
-    }
-}
-
-
-
 // get actual mapping loop count -- TBD:需要变化为timeloop形式的表示 -- done
 std::map<std::string, int32_t> GetLoopCount::get_loop_count(
     std::vector<std::vector<loop::TileExp::Descriptor>> input_loopnests){
@@ -906,15 +858,6 @@ std::map<std::string, int32_t> GetLoopCount::get_loop_count(
             }
             dim_results[dim_name] += tem_result * (dim_residual_ends[dim_name][i] - 1);
         }
-        // dim_results[dim_name] = tem_result;
-        // unsigned loop_upbound = dim_residual_ends[dim_name].size();
-        // for (unsigned i = 0; i < loop_upbound; ++i){
-        //     tem_result = dim_residual_ends[dim_name][i];
-        //     for (unsigned j = i + 1; j < loop_upbound; j++){
-        //         tem_result *= dim_ends[dim_name][j];
-        //     }
-        //     dim_results[dim_name] += tem_result;
-        // } 
     }
     return dim_results;
 }
@@ -967,13 +910,6 @@ void GetLoopCount::visitOp(const OpNode* node){
     // check if the loop nest is legal
     auto common_shape = evaluator_.workloads_.get_shape();
     auto factorized_bounds = evaluator_.workloads_.get_factorized_bounds();
-    // for (auto& tmp: common_shape.FactorizedDimensionIDToName){
-    //     std::cout << tmp.first << " " << tmp.second << std::endl;
-    // }
-    // std::cout << "factorized_bounds: " << std::endl;
-    // for (auto& tmp: factorized_bounds){
-    //     std::cout << tmp.first << " " << tmp.second << std::endl;
-    // }
 
     auto mapping_loop_results = get_loop_count(current_node_->get_inherit_loopnest());
     for (auto& tmp: mapping_loop_results){

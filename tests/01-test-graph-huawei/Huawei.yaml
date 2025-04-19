@@ -70,18 +70,18 @@ architecture:
       # layout: ND
 
   - name: Vector
-    level_num: 20
+    level_num: 40
     level_name: VEC 
     attributes: 
       word-bits: 16 
       meshX: 20
       meshY: 1
-      compute_cycles: 2
+      compute_cycles: 1
       # successor: MainMemory, L0C
       # layout: ND
   
   - name: UB 
-    level_num: 20
+    level_num: 40
     level_name: SRAM 
     attributes:
       meshX: 20

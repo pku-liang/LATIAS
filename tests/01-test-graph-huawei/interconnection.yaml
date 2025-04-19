@@ -65,16 +65,16 @@ interconnection:
       read_bandwidth: 2
       write_bandwidth: 2
 
-    - name: C10
-      source: Cube
-      target: Inner
-      type: Mesh
-      read_bandwidth: 2
-      write_bandwidth: 2
+    # - name: C10
+    #   source: Cube
+    #   target: Inner
+    #   type: Mesh
+    #   read_bandwidth: 2
+    #   write_bandwidth: 2
 
-    - name: C11
-      source: Vector
-      target: Inner
-      type: Ring
-      read_bandwidth: 2
-      write_bandwidth: 2
+    # - name: C11
+    #   source: Vector
+    #   target: Inner
+    #   type: Ring
+    #   read_bandwidth: 2
+    #   write_bandwidth: 2

@@ -324,7 +324,7 @@ class PerfAnalysis: public Visitor{
     // 获取当前node下的循环
     std::vector<loop::TileExp::Descriptor> getLoopVector(const Node* node);
     // 递归循环，用于表示不同loop dimension
-    void RecursiveLoop(const Node* node, std::vector<loop::TileExp::Descriptor> loop_vector, unsigned current_dim_idx, unsigned last_dim_idx, bool is_last_loop);
+    // void RecursiveLoop(const Node* node, std::vector<loop::TileExp::Descriptor> loop_vector, unsigned current_dim_idx, unsigned last_dim_idx, bool is_last_loop);
     // 获取当前循环下，每一个dimension的范围
     std::vector<DimRange> computeRange(const std::vector<std::vector<loop::TileExp::Descriptor>> loop_vector);
     // 获取当前循环下，相关的tensor的范围

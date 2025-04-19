@@ -618,7 +618,9 @@ int64_t PerfAnalysis::addCurrentTensor(bool is_input){
 
             }
             TensorMap outputTensorMap(tensor_name, tensor_dims, dim_range_map);
-            data_movements_tmp += TileExp::calTensorMapDM(outputTensorMap);
+            if(current_node_->get_parent() != nullptr){
+                data_movements_tmp += TileExp::calTensorMapDM(outputTensorMap);
+            }
             current_node_->output_tensors_[tensor_name] = outputTensorMap;
         }
     }

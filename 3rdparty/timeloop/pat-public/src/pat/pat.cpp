@@ -66,7 +66,7 @@ double SRAMEnergy(std::uint64_t height, std::uint64_t width, std::uint64_t num_b
 
   // The baseline data was for a 16b access.
   // Scale this based on the width of the access.
-  // This will make the model insensitive to block
+  // This will make the model insensitive to blocks
   // size.
   double energy = (y * width) / 16;
   return energy;

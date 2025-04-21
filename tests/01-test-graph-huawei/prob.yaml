@@ -4,9 +4,9 @@ problem:
     outs: exp
   dimensions: [M, N, K]
   instance:
-    M: 640
+    M: 4096
     N: 256
-    K: 576
+    K: 4096
     # L: 512
 
   ops:

@@ -49,6 +49,18 @@ else:
 
 每个循环中维护三种类型的循环变量，分别记录初次，中间，结尾
 
+## latency analysis
+1. 对于已经有的，当前tile(or Op)的输入输出数据搬运量，计算搬运延迟
+    1. 搬入延迟的计算：1）跳过scope节点和trans节点，return 0； 2）如果该节点的上一个平级节点的最深处节点的末尾是trans节点，则该节点的数据来源于该trans节点的上一个平级节点；3）如果不存在上一个平级节点，或者不是上述情况，则该节点数据来源于上层的最近tile节点，读取出对应的带宽计算cycle数目
+    2. 搬出延迟的计算：1）跳过scope节点和trans节点，return 0；2）如果该tile节点下一个平级节点是trans节点，则以trans节点的目标作为传递对象来读取带宽数据；3）如果该Op节点是Foward mode，则以找到下一个最近的trans节点的目标作为带宽计算；4）不满足以上情况，则传回至上层的最近tile节点
+    3. 对于Op节点，设置compute cycle为对应Op节点的值
+2. 计算当前tile的子tile的计算延迟
+    1. 循环最开始时，清空当前节点的Latency vector
+    2. 对于其包含的数个子tile：1）忽略trans节点；2）对于tile和op节点，读取该子节点的input output和process加入到当前节点的Latency vector；3）对于scope节点，读取孙子节点
+    3. 
+3. 组合构成当前tile的整体延迟，用一个结构体表示，组合时根据intra-tile的细节进行，
+
+
 
 ## search
 

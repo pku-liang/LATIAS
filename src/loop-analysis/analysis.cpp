@@ -400,6 +400,7 @@ void Evaluator::analysis_latias(){
     PerfAnalysis pass_(*this, eva_root_);
     pass_.run(root_);
     data_movements_ = pass_.data_movements_;
+    latency_ = pass_.current_node_->process_latency_;
 }
 
 void PerfAnalysis::run(const Node* root){
@@ -421,10 +422,22 @@ void PerfAnalysis::init(const Node* root){
 void PerfAnalysis::visitScope(const ScopeNode* node){
     if (node == nullptr) TILEEXP_ASSERT(false, "ScopeNode is nullptr");
     // visitScopeLoop(node);
+    current_node_->latency_sub_vec_.clear();
     for (unsigned i = 0 ; i < node->get_children().size(); i++){
         current_node_ = current_node_->get_children()[i];
         node->get_children()[i]->accept(this);
+        auto child = current_node_->get_children()[i];
+        if (child->ori_node_->get_type() == Node::Trans) continue;
+        Latency latency(child->input_latency_, child->output_latency_, child->process_latency_);
+        current_node_->latency_sub_vec_.push_back(latency);
+        current_node_->sub_latency_num_ += 1;
     }
+    
+    current_node_->latency_sub_vec_[0].sub_latency_num_ = current_node_->sub_latency_num_;
+    current_node_->latency_vec_.push_back(current_node_->latency_sub_vec_);
+    
+    // 处理子tile的latency
+
     current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
 }
 
@@ -471,6 +484,16 @@ void PerfAnalysis::visitOp(const OpNode* node){
         output_dm += tmp;
     }
     data_movements_ += output_dm + input_dm;
+
+    // start latency
+    auto target_level = current_node_->ori_node_->get_target_level_name();
+    auto hardware_specs = evaluator_.arch_topo_.archTopo_map_;
+    current_node_->process_latency_ = hardware_specs[target_level].compute_cycles;
+    current_node_->input_latency_ = getInputLatency(current_node_, input_dm);
+    current_node_->output_latency_ = getOutputLatency(current_node_, output_dm);
+    // std::cout << current_node_->process_latency << std::endl;
+    // recover current_node_
+    
     current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
 }
 
@@ -479,7 +502,129 @@ void PerfAnalysis::visitTrans(const TransNode* node){
     current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
 }
 
+std::string PerfAnalysis::findLastOpTrans(EvaNode* node){
+    // auto num = node->get_children().size();
+    EvaNode tmp_node = *node;
+    while (true){
+        auto num = tmp_node.get_children().size();
+        if (tmp_node.ori_node_->get_type() == Node::Op || tmp_node.ori_node_->get_type() == Node::Trans) break;
+        // tmp_node = tmp_node->get_children()[num - 1];
+        if (tmp_node.get_children()[num - 1]->ori_node_->get_type() == Node::Trans) tmp_node = *tmp_node.get_children()[num - 1];
+        else tmp_node = *tmp_node.get_children()[num - 1];
+    }
+    TILEEXP_ASSERT(tmp_node.ori_node_->get_type() == Node::Op || tmp_node.ori_node_->get_type() == Node::Trans, "Source is not Op node");
+    return tmp_node.ori_node_->get_target_level_name();
+}
 
+int PerfAnalysis::getOutputLatency(EvaNode* node, int64_t data_movement){
+    if (node->ori_node_->get_type() == Node::Scope || node->ori_node_->get_type() == Node::Trans) return 0;
+
+    std::string source_level; 
+    if (node->ori_node_->dataflow_mode_ != Node::Forward){
+        source_level = current_node_->ori_node_->get_target_level_name();
+    }
+    else{
+        // EvaNode* tmp_node = node;
+        // auto targetname = findLastOp(node);
+        source_level = findLastOpTrans(node);
+    }
+    if (node->get_parent() == nullptr) return 0;
+    // int parent_child_num = node->get_parent()->get_children().size();
+    // int current_node_position = findCurrentNodePosition(node);
+    auto target_level = findTarget(node);
+    auto connection = source_level + "2" + target_level.first;
+    auto intercon = evaluator_.intercon_.intercon_attri_map_;
+    auto bandwidth = intercon[connection].write_bandwidth_;
+    return int((data_movement + bandwidth - 1) / bandwidth);
+}
+
+std::pair<std::string, bool> PerfAnalysis::findTarget(EvaNode* node){
+    if (node->ori_node_->dataflow_mode_ == Node::Forward){
+        while(true){
+            int parent_child_num = node->get_parent()->get_children().size();
+            int current_node_position = findCurrentNodePosition(node);
+            if (current_node_position + 1 == parent_child_num){
+                node = node->get_parent();
+                continue;
+            }
+            auto target_node = node->get_parent()->get_children()[current_node_position + 1];
+            TILEEXP_ASSERT(target_node->ori_node_->get_type() == Node::Trans, "findTarget fail");
+            return std::pair<std::string, bool>(target_node->ori_node_->get_target_level_name(), true);
+    
+        }
+    }
+    else{
+        auto parent_node = node->get_parent();
+        while(parent_node->ori_node_->get_type() != Node::Tile) parent_node = parent_node->get_parent();
+        return std::pair<std::string, bool>(parent_node->ori_node_->get_target_level_name(), false);
+    }
+}
+
+// 获取当前节点输入的latency
+int PerfAnalysis::getInputLatency(EvaNode* node, int64_t data_movement){
+    // 不计算scope和trans的latency
+    if (node->ori_node_->get_type() == Node::Scope || node->ori_node_->get_type() == Node::Trans) return 0;
+
+    auto target_level = current_node_->ori_node_->get_target_level_name();
+    if (node->get_parent() == nullptr) return 0;
+    // int parent_child_num = node->get_parent()->get_children().size();
+    int current_node_position = findCurrentNodePosition(node);
+    auto source_level = findSource(node, current_node_position);
+    auto connection = source_level.first + "2" + target_level;
+    auto intercon = evaluator_.intercon_.intercon_attri_map_;
+    auto bandwidth = intercon[connection].read_bandwidth_;
+    return int((data_movement + bandwidth - 1) / bandwidth);
+}
+
+// 找到当前节点的上一个平级节点的最深处节点是否是trans节点 x
+// 找到当前节点数据的来源
+std::pair<std::string, bool> PerfAnalysis::findSource(EvaNode* node, int current_node_position){
+    // 上一个节点不存在
+    if (node->ori_node_->dataflow_mode_ == Node::Forward){
+        if (node->get_parent()->get_children().size() == 1 || current_node_position == 0){
+            auto parent_node = node->get_parent();
+            while(parent_node->ori_node_->get_type() != Node::Tile) parent_node = parent_node->get_parent();
+            return std::pair<std::string, bool>(parent_node->ori_node_->get_target_level_name(), false);
+        } 
+        // return std::pair<std::string, bool>("", false);
+        // 上一个节点存在
+        auto former_node = node->get_parent()->get_children()[current_node_position - 1];
+        if (former_node->ori_node_->get_type() == Node::Trans){
+            former_node = node->get_parent()->get_children()[current_node_position - 2];
+            while(true){
+                auto num = former_node->get_children().size();
+                if (num > 0) former_node = former_node->get_children()[num - 1];
+                else break;
+            }
+            TILEEXP_ASSERT(former_node->ori_node_->get_type() == Node::Op, "Source is not Op node");
+            return std::pair<std::string, bool>(former_node->ori_node_->get_target_level_name(), true);
+        }
+        else {
+            auto parent_node = node->get_parent();
+            while(parent_node->ori_node_->get_type() != Node::Tile) parent_node = parent_node->get_parent();
+            return std::pair<std::string, bool>(parent_node->ori_node_->get_target_level_name(), false);
+        }
+    }
+    else{
+        auto parent_node = node->get_parent();
+        while(parent_node->ori_node_->get_type() != Node::Tile) parent_node = parent_node->get_parent();
+        return std::pair<std::string, bool>(parent_node->ori_node_->get_target_level_name(), false);
+    }
+
+}
+
+// 找到当前节点在父节点的子节点中的位置
+int PerfAnalysis::findCurrentNodePosition(EvaNode* node){
+    EvaNode* tmp_node;
+    if (node->get_parent() == nullptr) return 0;
+    tmp_node = node->get_parent();
+
+    for (unsigned i = 0; i < tmp_node->get_children().size(); i++){
+        if (node == tmp_node->get_children()[i]) return i;
+    }
+    
+    TILEEXP_ASSERT(false, "findCurrentNodePosition fail");
+}
 
 // 计算data move的几个步骤
 // 每一个op都会根据offset计算产生一个input和output tensor，以及每一个维度的循环带来的range，
@@ -677,13 +822,35 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
         
         // *** 在最内层的dim中的计算当前级别的tile的IO张量信息对应的搬运量，每次都需要重新计算，并保留结果，供下次计算做覆盖
         if (current_dim_idx == dim_bound - 1 && isFirstLoop(current_node_->ori_start_, current_node_->current_start_)){
+            // *** 计算data movement
             // input
             auto input_dm = addCurrentTensor(true);
             // output
             auto output_dm = addCurrentTensor(false);
-            std::cout << current_node_->ori_node_->target_level_name << ": Input Tensor Data Movement: " << input_dm << std::endl;
-            std::cout << current_node_->ori_node_->target_level_name << ": Output Tensor Data Movement: " << output_dm << std::endl;
+            // Print
+            if (false){
+                std::cout << current_node_->ori_node_->target_level_name << ": Input Tensor Data Movement: " << input_dm << std::endl;
+                std::cout << current_node_->ori_node_->target_level_name << ": Output Tensor Data Movement: " << output_dm << std::endl;
+            }
             data_movements_ += input_dm + output_dm;
+            // *** 计算latency
+
+            // auto target_level = current_node_->ori_node_->get_target_level_name();
+            // auto hardware_specs = evaluator_.arch_topo_.archTopo_map_;
+            // current_node_->process_latency_ = hardware_specs[target_level].compute_cycles;
+            if (current_node_->get_parent() != nullptr){
+                // auto target_level = current_node_->ori_node_->get_target_level_name();
+                // auto hardware_specs = evaluator_.arch_topo_.archTopo_map_;
+                current_node_->input_latency_ = getInputLatency(current_node_, input_dm);
+                current_node_->output_latency_ = getOutputLatency(current_node_, output_dm);
+            }
+            else{
+                current_node_->input_latency_ = 0;
+                current_node_->output_latency_ = 0;
+            }
+            // 清空当前节点的Latency vector
+            current_node_->latency_vec_.clear();
+            current_node_->sub_latency_num_ = 0;
         }
 
         if (current_dim_idx + 1 < dim_bound){
@@ -691,51 +858,23 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
             visitTileLoop(node, current_dim_idx + 1);
         }
         else{
+            // 计算data movement
+            current_node_->latency_sub_vec_.clear();
             for (unsigned i = 0 ; i < node->get_children().size(); i++){
                 current_node_ = current_node_->get_children()[i];
                 node->get_children()[i]->accept(this);
+                auto child = current_node_->get_children()[i];
+                if (child->ori_node_->get_type() == Node::Trans) continue;
+                if (child->ori_node_->get_type() == Node::Scope){
+                    current_node_->latency_sub_vec_ = child->latency_sub_vec_;
+                    continue;
+                }
+                Latency latency(child->input_latency_, child->output_latency_, child->process_latency_);
+                current_node_->latency_sub_vec_.push_back(latency);
+                current_node_->sub_latency_num_ += 1;
             }
-            // *** 在这里根据子节点，获取子节点整体的latency
-            // AddChildTensorMap();
-            // for (unsigned i = 0 ; i < node->get_children().size(); i++){
-            //     current_node_ = current_node_->get_children()[i];
-            //     auto current_node_type = current_node_->ori_node_->get_type();
-            //     if (current_node_type == Node::Scope){
-            //         node->get_children()[i]->accept(this);
-            //         // AddLatency(); -- TBD
-            //     }
-            //     else if (current_node_type == Node::Op){
-            //         // 获取子节点的io tensor
-            //         auto& tensor_map_in = current_node_->input_tensors_;
-            //         auto& tensor_map_out = current_node_->output_tensors_;
-            //         // 根据current_dim_range_计算当前tensor的范围
-            //         auto data_move = CalDataMove(tensor_map_in, tensor_map_out, node->loopnests_);
-            //         AddDataMove(data_move);
-            //         auto flops = CalFlops(tensor_map_in, tensor_map_out);
-            //         // struct Latency -- int, int, int
-            //         // 先计算搬运量带来的延迟，后根据interconnection计算 copyin, process, copyout的情况
-            //         auto Latency = GetLatency(data_move, flops);
-            //         // 前面需要一个child_latency的集合
-            //         AddLatency(Latency);
-            //         // 复原current_node_到当前节点
-            //         current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
-            //     }
-            //     else if (current_node_type == Node::Tile){
-            //         // 先遍历该tile的全部子节点
-            //         node->get_children()[i]->accept(this);
-            //         // 再计算该节点的分析
-            //         auto tensor_map_in = &(current_node_->input_tensors_);
-            //         auto tensor_map_out = &(current_node_->output_tensors_);
-            //         // auto dim_range = GetDimRange(); // --TBD -- std::vector<std::string, std::pair<int, int>>
-            //         auto data_move = CalDataMove(tensor_map_in, tensor_map_out, node->loopnests_);
-            //         AddDataMove(data_move);
-            //         auto flops = CalFlops(tensor_map_in, tensor_map_out);
-            //         AddLatency(data_move, flops);
-            //     }
-            //     else if (current_node_type == Node::Trans){
-            //         node->get_children()[i]->accept(this);
-            //     }
-            // }
+            current_node_->latency_sub_vec_[0].sub_latency_num_ = current_node_->sub_latency_num_;
+            current_node_->latency_vec_.push_back(current_node_->latency_sub_vec_);
         }
         vec_last_dim_[dim_name_].pop_back();
         current_node_->current_offset_[dim_name_].pop_back();
@@ -749,13 +888,162 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
     
     dim_skew[dim_name_] -= current_node_->current_dim_skew_[dim_name_];
 
+    
     if (current_dim_idx == 0){
+        // 收集完全部子tile的latency，计算当前tile的总process latency
+        auto process_latency = computeLatency(current_node_->latency_vec_);
+        if(process_latency != 0){
+            current_node_->process_latency_ = process_latency;
+        }
         current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
     }
     // 还原初始start
     *loop_start = ori_start;
 }
 
+// only for tile node
+int64_t PerfAnalysis::computeLatency(std::vector<std::vector<Latency> > latency_vec){
+    TILEEXP_ASSERT(latency_vec.size() != 0, "latency_vec is empty");
+    auto latency_num = latency_vec.size();
+    auto sub_latency_num = latency_vec[0].size();
+    
+    int64_t process_latency = 0;
+    Latency total_latency;
+    bool is_temporal = static_cast<const TileNode*>(current_node_->ori_node_)->get_tile_type() == TileNode::Temporal? true : false;
+    bool is_forward = current_node_->ori_node_->dataflow_mode_ == Node::Forward? true : false;
+    
+    // 这里目前是简化的写法，只针对单gemm、vec和融合vector，不能适应复杂情况
+    // for gemm
+    if (is_forward){
+        if (is_temporal){
+            for (unsigned i = 0; i < latency_num; i++){
+                auto latency = latency_vec[i];
+                for (unsigned j = 0; j < sub_latency_num; j++){
+                    total_latency.input_latency_ += latency[j].input_latency_;
+                    total_latency.output_latency_ += latency[j].output_latency_;
+                    total_latency.process_latency_ += latency[j].process_latency_;
+                    if (is_print_){
+                        std::cout << "Input OP: " << latency[j].input_latency_ << std::endl;
+                        std::cout << "Output OP: " << latency[j].output_latency_ << std::endl;
+                        std::cout << "Process OP: " << latency[j].process_latency_ << std::endl;
+                        is_print_ = false;
+                    }
+                }
+
+            }
+        }
+        //spatial
+        else{
+            unsigned fanout = 20;
+            auto intercon = evaluator_.intercon_.intercon_attri_map_;
+            auto con_type = intercon["MainMemory2L1"].con_type_;
+            for (unsigned i = 0; i < fanout; i++){
+                Latency tmp_latency;
+                for (unsigned j = 0; j < (latency_num + fanout - 1) / fanout; j++){
+                    if (j * fanout + i >= latency_num) break;
+                    auto latency = latency_vec[j * fanout + i];
+                    for (unsigned k = 0; k < sub_latency_num; k++){
+                        if(con_type == Hardware::InterConnection::BC){
+                            tmp_latency.input_latency_ += latency[k].input_latency_;
+                            tmp_latency.output_latency_ += latency[k].output_latency_;
+                        }
+                        else{
+                            tmp_latency.input_latency_ += latency[k].input_latency_ + latency[k].output_latency_;
+                            tmp_latency.output_latency_ += latency[k].input_latency_ + latency[k].output_latency_;
+                        }
+                        tmp_latency.process_latency_ += latency[k].process_latency_;
+                    }
+                }
+                int64_t total_latency_all = total_latency.input_latency_ + total_latency.output_latency_ + total_latency.process_latency_;
+                int64_t tmp_latency_all = tmp_latency.input_latency_ + tmp_latency.output_latency_ + tmp_latency.process_latency_;
+                if (total_latency_all < tmp_latency_all) total_latency = tmp_latency;
+            }
+            // total_latency.input_latency_ = total_latency.input_latency_ * (latency_num + fanout - 1) / fanout;
+            // total_latency.output_latency_ = total_latency.output_latency_ * (latency_num + fanout - 1) / fanout;
+            // total_latency.process_latency_ = total_latency.process_latency_ * (latency_num + fanout - 1) / fanout;
+        }
+    }
+    // WB for vec and vec fusion, only consider pipeline
+    else{
+        if (is_temporal){
+            for (unsigned i = 0; i < latency_num; i++){
+                auto latency = latency_vec[i];
+                for (unsigned j = 0; j < sub_latency_num; j++){
+                    auto tmp = latency[j].input_latency_ + latency[j].output_latency_ + latency[j].process_latency_;
+                    total_latency.input_latency_ += tmp;
+                    total_latency.output_latency_ += tmp;
+                    total_latency.process_latency_ += tmp;
+                }
+            }
+        }
+        else{
+            auto intercon = evaluator_.intercon_.intercon_attri_map_;
+            // auto bandwidth = intercon["UB2MainMemory"].read_bandwidth_;
+            auto con_type = intercon["UB2MainMemory"].con_type_;
+            // if (con_type == Hardware::InterConnection::FD){
+            // }
+            unsigned fanout = 40;
+            for (unsigned i = 0; i < fanout; i++){
+                Latency tmp_latency;
+                for (unsigned j = 0; j < (latency_num + fanout - 1) / fanout; j++){
+                    if (j * fanout + i >= latency_num) break;
+                    auto latency = latency_vec[j * fanout + i];
+                    for (unsigned k = 0; k < sub_latency_num; k++){
+                        if(con_type == Hardware::InterConnection::FD || con_type == Hardware::InterConnection::BC){
+                            tmp_latency.input_latency_ += latency[k].input_latency_;
+                            tmp_latency.output_latency_ += latency[k].output_latency_;
+                        }
+                        else{
+                            tmp_latency.input_latency_ += latency[k].input_latency_ + latency[k].output_latency_;
+                            tmp_latency.output_latency_ += latency[k].input_latency_ + latency[k].output_latency_;
+                        }
+                        tmp_latency.process_latency_ += latency[k].process_latency_;
+                    }
+                }
+                int64_t total_latency_all = total_latency.input_latency_ + total_latency.output_latency_ + total_latency.process_latency_;
+                int64_t tmp_latency_all = tmp_latency.input_latency_ + tmp_latency.output_latency_ + tmp_latency.process_latency_;
+                if (total_latency_all < tmp_latency_all) total_latency = tmp_latency;
+            }
+            // total_latency.input_latency_ = total_latency.input_latency_ * (latency_num + fanout - 1) / fanout;
+            // total_latency.output_latency_ = total_latency.output_latency_ * (latency_num + fanout - 1) / fanout;
+            // total_latency.process_latency_ = total_latency.process_latency_ * (latency_num + fanout - 1) / fanout;
+        }
+    }
+
+    process_latency = std::max(std::max(total_latency.input_latency_, total_latency.output_latency_), total_latency.process_latency_);
+
+    return process_latency;
+
+    // for (unsigned i = 0; i < current_node_->get_children().size(), i++){
+    //     auto child_node = current_node_->get_children()[i];
+    //     if (child_node->ori_node_->get_type() == Node::Trans) continue;
+    //     if (is_forward || )
+    // }
+
+    // ScopeType scope_type;
+    // if (current_node_->get_children().size() == 1) {
+    //     if (current_node_->get_children()[0]->ori_node_->get_type() == Node::Scope) scope_type = current_node_->get_children()[0]->ori_node_->scope_type_;
+    //     else scope_type = ScopeType::Sequential;
+    // }
+    // else scope_type = ScopeType::Pipeline;
+
+    // // temporal
+    // if(is_temporal){
+
+    // }
+    // // spatial
+    // else{
+
+    // }
+
+    // ScopeType scope_type = current_node_->ori_node_->scope_type_;
+
+    // 对于interconnection的属性，修改input output latency
+
+    // 对于scope，计算latency
+    
+    // return 0;
+}
 
 bool PerfAnalysis::isLastLoop(std::string dim_name){
     bool tmp = true;

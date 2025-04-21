@@ -20,6 +20,7 @@ using mapping::TileExp::OpNode;
 using mapping::TileExp::TileNode;
 using mapping::TileExp::ScopeNode;
 using mapping::TileExp::TransNode;
+using mapping::TileExp::ScopeType;
 
 using TileExp::DimRange;
 
@@ -73,9 +74,9 @@ class EvaNode{
     // useless
     std::unordered_map<std::string, TensorMap> tensor_tmp_;
     std::unordered_map<std::string, TensorMap> last_input_tensors_;
-    int64_t copyin_latency;
-    int64_t copyout_latency;
-    int64_t process_latency;
+    // int64_t copyin_latency_;
+    // int64_t copyout_latency_;
+    // int64_t process_latency_;
     // std::vector<TensorMap> last_output_tensors_;
     mutable EvaNode* parent_ = nullptr;
     std::vector<EvaNode*> children_;
@@ -88,8 +89,15 @@ class EvaNode{
     std::unordered_map<std::string, std::vector<StEd>> current_offset_;
     std::unordered_map<std::string, int64_t> current_dim_skew_;
 
+    int64_t input_latency_ = 0;
+    int64_t output_latency_ = 0;
+    int64_t process_latency_ = 0;
+
     std::vector<int> ori_start_;
     std::vector<int> current_start_;
+    std::vector<std::vector<Latency>> latency_vec_;
+    std::vector<Latency> latency_sub_vec_;
+    unsigned sub_latency_num_ = 0;
 
     
     public:
@@ -143,6 +151,7 @@ class EvaNode{
         ori_start_.clear();
         current_start_.clear();
         current_dim_skew_.clear();
+        latency_vec_.clear();
     }
 
     void printLoop() const;
@@ -209,6 +218,8 @@ class Evaluator{
 
     void Print(){
         std::cout << "Total DataMovement: " << data_movements_ << std::endl;
+        std::cout << "Total cycle: " << latency_ << std::endl;
+        std::cout << "Total Latency (us): " << latency_/1800 << std::endl;
     }
 
     // friend class ResetFunc;
@@ -293,6 +304,7 @@ class PerfAnalysis: public Visitor{
     Evaluator& evaluator_;
     EvaNode* current_node_;
     EvaNode* root_;
+    // bool is_print_ = true;
     bool is_init_offset_ = false;
     bool is_init_tensor_ = false;
     bool is_get_offset_ = false;
@@ -333,6 +345,7 @@ class PerfAnalysis: public Visitor{
     void diffTensorRange(const std::vector<DimRange>& tensor_range);
     // 计算在对应数据搬运量下的延迟，每一个延迟包括搬入，计算，搬出，或搬入、计算
     std::vector<int> computeLatency(std::string source, std::string target, int data_movement);
+    int64_t computeLatency(std::vector<std::vector<Latency> > latency_vec);
     std::vector<int> scopeLatency();
     std::vector<int> tileLatency();
     std::vector<int> transLatency();
@@ -354,6 +367,12 @@ class PerfAnalysis: public Visitor{
     bool isLastLoop(std::string dim_name);
     bool isFirstLoop(std::vector<int> loop_ori, std::vector<int> loop_current);
     int64_t addCurrentTensor(bool is_input);
+    int findCurrentNodePosition(EvaNode* node);
+    int getInputLatency(EvaNode* node, int64_t data_movement);
+    std::string findLastOpTrans(EvaNode* node);
+    int getOutputLatency(EvaNode* node, int64_t data_movement);
+    std::pair<std::string, bool> findSource(EvaNode* node, int current_node_position);
+    std::pair<std::string, bool> findTarget(EvaNode* node);
 
     void PrintDimLoop(std::string dim_name){
         std::cout << "Loop Name: " << dim_name;

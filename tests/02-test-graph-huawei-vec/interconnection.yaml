@@ -6,8 +6,8 @@ interconnection:
       source: MainMemory
       target: L1
       type: BC
-      read_bandwidth: 72
-      write_bandwidth: 72
+      read_bandwidth: 100
+      write_bandwidth: 100
     
     - name: C2
       source: L1
@@ -20,22 +20,22 @@ interconnection:
       source: L0AB
       target: Cube
       type: HD
-      read_bandwidth: 1000
-      write_bandwidth: 1000
+      read_bandwidth: 100
+      write_bandwidth: 100
     
     - name: C4
       source: Cube
       target: L0C
       type: HD
-      read_bandwidth: 1000
-      write_bandwidth: 1000
+      read_bandwidth: 100
+      write_bandwidth: 100
 
     - name: C5
       source: L0C
       target: MainMemory
       type: FD
-      read_bandwidth: 72
-      write_bandwidth: 72
+      read_bandwidth: 20
+      write_bandwidth: 20
 
     - name: C6
       source: UB

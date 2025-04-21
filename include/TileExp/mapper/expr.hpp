@@ -24,6 +24,19 @@ namespace TileExp {
     // struct Constraint;
     // struct Range;
     
+    struct Latency {
+        int64_t input_latency_ = 0;
+        int64_t output_latency_ = 0;
+        int64_t process_latency_ = 0;
+        unsigned sub_latency_num_ = 0;
+
+        Latency() = default;
+        Latency(int64_t input_latency, int64_t output_latency, int64_t process_latency):
+            input_latency_(input_latency), output_latency_(output_latency), process_latency_(process_latency) {};
+        Latency(int64_t input_latency, int64_t process_latency):
+            input_latency_(input_latency), process_latency_(process_latency) {};
+    };
+
     struct DimRange{
         std::string dim_name_;
         int low_bound_ = 0;

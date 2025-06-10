@@ -1,0 +1,16 @@
+input file: ./VIT_S_HP/Huawei.yaml
+input file: ./VIT_S_HP/interconnection.yaml
+input file: ./VIT_S_HP/map.yaml
+input file: ./VIT_S_HP/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::SUB success!
+Loop count of Op Op::Exp success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 11796480
+Total cycle: 39424
+Total Latency (us): 21.9022
+

@@ -1,0 +1,44 @@
+VIT_S
+input file: ./VIT_S_AP/Huawei.yaml
+input file: ./VIT_S_AP/interconnection.yaml
+input file: ./VIT_S_AP/map.yaml
+input file: ./VIT_S_AP/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::Sub success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 7864320
+Total cycle: 13312
+Total Latency (us): 7.39556
+input file: ./VIT_S_APT/Huawei.yaml
+input file: ./VIT_S_APT/interconnection.yaml
+input file: ./VIT_S_APT/map.yaml
+input file: ./VIT_S_APT/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::Sub success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 7864320
+Total cycle: 3280
+Total Latency (us): 1.82222
+input file: ./VIT_S_APTU/Huawei.yaml
+input file: ./VIT_S_APTU/interconnection.yaml
+input file: ./VIT_S_APTU/map.yaml
+input file: ./VIT_S_APTU/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::Sub success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 7864320
+Total cycle: 5160
+Total Latency (us): 2.86667
+

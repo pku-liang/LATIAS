@@ -350,7 +350,7 @@ class PerfAnalysis: public Visitor{
     std::vector<int> tileLatency();
     std::vector<int> transLatency();
 
-    bool is_print_ = true;
+    bool is_print_ = false;
     void visitScopeLoop(const Node* node);
     void visitScope(const ScopeNode* node) override;
     void visitTileLoop(const Node* node, unsigned current_loop_idx);
@@ -433,6 +433,8 @@ class GetMemInfo: public Visitor{
     friend class Evaluator;
     GetMemInfo(Evaluator& evaluator, EvaNode* current_node): evaluator_(evaluator), current_node_(current_node){}
 };
+
+std::string nameSub(std::string input);
 
 } // namespace Analysis
 } // namespace TileExp

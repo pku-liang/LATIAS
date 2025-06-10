@@ -1,0 +1,44 @@
+T5
+input file: ./T5_APT/Huawei.yaml
+input file: ./T5_APT/interconnection.yaml
+input file: ./T5_APT/map.yaml
+input file: ./T5_APT/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 240123904
+Total cycle: 13312
+Total Latency (us): 7.39556
+input file: ./T5_APT_2/Huawei.yaml
+input file: ./T5_APT_2/interconnection.yaml
+input file: ./T5_APT_2/map.yaml
+input file: ./T5_APT_2/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 231735296
+Total cycle: 14336
+Total Latency (us): 7.96444
+input file: ./T5_APT_4/Huawei.yaml
+input file: ./T5_APT_4/interconnection.yaml
+input file: ./T5_APT_4/map.yaml
+input file: ./T5_APT_4/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 256901120
+Total cycle: 14807
+Total Latency (us): 8.22611
+

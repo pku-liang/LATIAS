@@ -41,8 +41,8 @@ interconnection:
       source: UB
       target: Vector
       type: FD
-      read_bandwidth: 45
-      write_bandwidth: 45
+      read_bandwidth: 128
+      write_bandwidth: 128
     
     - name: C7
       source: UB
@@ -62,8 +62,8 @@ interconnection:
       source: Vector
       target: UB
       type: FD
-      read_bandwidth: 45
-      write_bandwidth: 45
+      read_bandwidth: 128
+      write_bandwidth: 128
 
     # - name: C10
     #   source: Cube

@@ -119,7 +119,10 @@ lib_sources = Split("""
 ./common.cpp
 ./mapper/checker.cpp
 ./mapper/expr.cpp
-./loop-analysis/analysis.cpp
+./loop-analysis/common.cpp
+./loop-analysis/constraint.cpp
+./loop-analysis/init.cpp
+./loop-analysis/performance.cpp
 """)
 
 libenv = env.Clone()

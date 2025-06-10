@@ -1,0 +1,132 @@
+VIT_S
+input file: ./VIT_S_APT/Huawei.yaml
+input file: ./VIT_S_APT/interconnection.yaml
+input file: ./VIT_S_APT/map.yaml
+input file: ./VIT_S_APT/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 33816576
+Total cycle: 2048
+Total Latency (us): 1.13778
+input file: ./VIT_S_APT_2/Huawei.yaml
+input file: ./VIT_S_APT_2/interconnection.yaml
+input file: ./VIT_S_APT_2/map.yaml
+input file: ./VIT_S_APT_2/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 33226752
+Total cycle: 2048
+Total Latency (us): 1.13778
+input file: ./VIT_S_APT_4/Huawei.yaml
+input file: ./VIT_S_APT_4/interconnection.yaml
+input file: ./VIT_S_APT_4/map.yaml
+input file: ./VIT_S_APT_4/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 36175872
+Total cycle: 2278
+Total Latency (us): 1.26556
+
+VIT_B
+input file: ./VIT_B_APT/Huawei.yaml
+input file: ./VIT_B_APT/interconnection.yaml
+input file: ./VIT_B_APT/map.yaml
+input file: ./VIT_B_APT/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 60030976
+Total cycle: 4096
+Total Latency (us): 2.27556
+input file: ./VIT_B_APT_2/Huawei.yaml
+input file: ./VIT_B_APT_2/interconnection.yaml
+input file: ./VIT_B_APT_2/map.yaml
+input file: ./VIT_B_APT_2/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 58982400
+Total cycle: 4096
+Total Latency (us): 2.27556
+input file: ./VIT_B_APT_4/Huawei.yaml
+input file: ./VIT_B_APT_4/interconnection.yaml
+input file: ./VIT_B_APT_4/map.yaml
+input file: ./VIT_B_APT_4/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 64225280
+Total cycle: 4100
+Total Latency (us): 2.27778
+
+VIT_L
+input file: ./VIT_L_APT/Huawei.yaml
+input file: ./VIT_L_APT/interconnection.yaml
+input file: ./VIT_L_APT/map.yaml
+input file: ./VIT_L_APT/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 93716480
+Total cycle: 5120
+Total Latency (us): 2.84444
+input file: ./VIT_L_APT_2/Huawei.yaml
+input file: ./VIT_L_APT_2/interconnection.yaml
+input file: ./VIT_L_APT_2/map.yaml
+input file: ./VIT_L_APT_2/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 92078080
+Total cycle: 6144
+Total Latency (us): 3.41333
+input file: ./VIT_L_APT_4/Huawei.yaml
+input file: ./VIT_L_APT_4/interconnection.yaml
+input file: ./VIT_L_APT_4/map.yaml
+input file: ./VIT_L_APT_4/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 100270080
+Total cycle: 6830
+Total Latency (us): 3.79444
+

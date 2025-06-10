@@ -4,8 +4,8 @@ problem:
     outs: C
   dimensions: [M, N]
   instance:
-    M: 128
-    N: 128
+    M: 1024
+    N: 4096
 
   ops:
   - name: Add

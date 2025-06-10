@@ -1,0 +1,44 @@
+Test_S
+input file: ./Test_S_AP/Huawei.yaml
+input file: ./Test_S_AP/interconnection.yaml
+input file: ./Test_S_AP/map.yaml
+input file: ./Test_S_AP/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::Sub success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 100663296
+Total cycle: 42601
+Total Latency (us): 23.6672
+input file: ./Test_S_APT/Huawei.yaml
+input file: ./Test_S_APT/interconnection.yaml
+input file: ./Test_S_APT/map.yaml
+input file: ./Test_S_APT/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::Sub success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 100663296
+Total cycle: 42230
+Total Latency (us): 23.4611
+input file: ./Test_S_APTU/Huawei.yaml
+input file: ./Test_S_APTU/interconnection.yaml
+input file: ./Test_S_APTU/map.yaml
+input file: ./Test_S_APTU/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::Sub success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 100663296
+Total cycle: 66435
+Total Latency (us): 36.9083
+

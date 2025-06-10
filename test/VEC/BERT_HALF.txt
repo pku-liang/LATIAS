@@ -1,0 +1,15 @@
+input file: ./BERT_S_HP/Huawei.yaml
+input file: ./BERT_S_HP/interconnection.yaml
+input file: ./BERT_S_HP/map.yaml
+input file: ./BERT_S_HP/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::Sub success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 12582912
+Total cycle: 42640
+Total Latency (us): 23.6889
+

@@ -41,29 +41,29 @@ interconnection:
       source: UB
       target: Vector
       type: FD
-      read_bandwidth: 45
-      write_bandwidth: 45
+      read_bandwidth: 256
+      write_bandwidth: 256
     
     - name: C7
       source: UB
       target: MainMemory
       type: BC
-      read_bandwidth: 10
-      write_bandwidth: 10
+      read_bandwidth: 40
+      write_bandwidth: 40
 
     - name: C8
       source: MainMemory
       target: UB
       type: BC
-      read_bandwidth: 10
-      write_bandwidth: 10
+      read_bandwidth: 40
+      write_bandwidth: 40
     
     - name: C9
       source: Vector
       target: UB
       type: FD
-      read_bandwidth: 45
-      write_bandwidth: 45
+      read_bandwidth: 256
+      write_bandwidth: 256
 
     # - name: C10
     #   source: Cube

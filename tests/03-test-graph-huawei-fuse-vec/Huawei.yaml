@@ -8,11 +8,6 @@ architecture:
     attributes:
       sizeKB: 1048576
       word-bits: 8
-      # read_bandwidth: 4
-      # write_bandwidth: 4
-      # successor: L1, UB
-      # alignments: 0
-      # layout: ND
 
   - name: L1 
     level_num: 20
@@ -23,10 +18,6 @@ architecture:
       depth: 64 
       block_size: 1024 
       word-bits: 8
-      # read_bandwidth: 2
-      # write_bandwidth: 2
-      # successor: L0AB
-      # alignments: 0
     
   - name: L0AB
     level_num: 20
@@ -37,11 +28,6 @@ architecture:
       depth: 64 
       block_size: 1024
       word-bits: 8
-      # read_bandwidth: 2
-      # write_bandwidth: 2
-      # successor: Cube
-      # alignments: 0
-      # layout: ND
   
   - name: Cube 
     level_num: 20
@@ -51,8 +37,6 @@ architecture:
       meshX: 20
       meshY: 1
       compute_cycles: 1
-      # successor: L0C
-      # layout: ND
 
   - name: L0C
     level_num: 20
@@ -63,11 +47,6 @@ architecture:
       depth: 64 
       block_size: 1024
       word-bits: 8
-      # read_bandwidth: 2
-      # write_bandwidth: 2
-      # successor: MainMemory, Vector
-      # alignments: 0
-      # layout: ND
 
   - name: Vector
     level_num: 40
@@ -77,8 +56,6 @@ architecture:
       meshX: 20
       meshY: 1
       compute_cycles: 1
-      # successor: MainMemory, L0C
-      # layout: ND
   
   - name: UB 
     level_num: 40
@@ -89,8 +66,3 @@ architecture:
       depth: 64 
       block_size: 1024
       word-bits: 256
-      # read_bandwidth: 2
-      # write_bandwidth: 2
-      # successor: MainMemory, Vector
-      # alignments: 0
-      # layout: ND

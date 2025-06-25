@@ -5,67 +5,23 @@ namespace TileExp{
 
 namespace Analysis{
 
-
-void Evaluator::evaluate(){
-    std::cout << "======== Evaluate ========" <<std::endl;
-    reset();
-    get_loop_count();
-    init_analysis();
-    // get_mem_info();
-    // analysis();
-    analysis_latias();
-    std::cout << "======== End Evaluate ========" <<std::endl;
-}
-
-void Evaluator::get_mem_info(){
-    // GetMemInfo pass_(*this, eva_root_);
-    // pass_.run(root_);
-}
-
-void Evaluator::init_analysis(){
-    InitAnalysis pass_(*this, eva_root_);
-    pass_.run(root_);
-}
-
-void Evaluator::analysis_latias(){
-    PerfAnalysis pass_(*this, eva_root_);
-    pass_.run(root_);
-    data_movements_ = pass_.data_movements_;
-    latency_ = pass_.current_node_->process_latency_;
-}
-
-void Evaluator::get_loop_count(){
-    GetLoopCount pass_(*this, eva_root_);
-    pass_.run(root_);
-}
-
-
-
 // ************************ analysis part ************************* //
 
 void PerfAnalysis::run(const Node* root){
-    // init(root);
-    // analysis
     root->accept(this);
     std::cout << "Analysis Finish!" << std::endl;
 }
 
-void PerfAnalysis::init(const Node* root){
-    // get offset
-    is_get_offset_ = true;
-    root->accept(this);
-    is_get_offset_ = false;
-    std::cout << "Offset Set Finish!" << std::endl;
-}
-
-
 void PerfAnalysis::visitScope(const ScopeNode* node){
     if (node == nullptr) TILEEXP_ASSERT(false, "ScopeNode is nullptr");
-    // visitScopeLoop(node);
+    
+    // scope node only visit once;
     current_node_->latency_sub_vec_.clear();
     for (unsigned i = 0 ; i < node->get_children().size(); i++){
+        // 计算子节点的延迟
         current_node_ = current_node_->get_children()[i];
         node->get_children()[i]->accept(this);
+        // now the current_node is the scope node
         auto child = current_node_->get_children()[i];
         if (child->ori_node_->get_type() == Node::Trans) continue;
         Latency latency(child->input_latency_, child->output_latency_, child->process_latency_);
@@ -129,8 +85,13 @@ void PerfAnalysis::visitOp(const OpNode* node){
     auto target_level = current_node_->ori_node_->get_target_level_name();
     auto hardware_specs = evaluator_.arch_topo_.archTopo_map_;
     current_node_->process_latency_ = hardware_specs[target_level].compute_cycles;
-    current_node_->input_latency_ = getInputLatency(current_node_, input_dm);
-    current_node_->output_latency_ = getOutputLatency(current_node_, output_dm);
+    // 此处
+    // current_node_->input_latency_ = getInputLatency(current_node_, input_dm);
+    // current_node_->output_latency_ = getOutputLatency(current_node_, output_dm);
+    current_node_->input_latency_ = 0;
+    current_node_->output_latency_ = 0;
+
+
     // std::cout << current_node_->process_latency << std::endl;
     // recover current_node_
     
@@ -266,78 +227,6 @@ int PerfAnalysis::findCurrentNodePosition(EvaNode* node){
     TILEEXP_ASSERT(false, "findCurrentNodePosition fail");
 }
 
-// 计算data move的几个步骤
-// 每一个op都会根据offset计算产生一个input和output tensor，以及每一个维度的循环带来的range，
-// 作为data movement
-// 每一个tile都会根据自身的tiling factor，对每一个child的io tensor进行维度变化
-// 目前只考虑输入时op节点倍数的情况
-void PerfAnalysis::visitOpLoop(const Node* node){
-    if (node == nullptr) TILEEXP_ASSERT(false, "OpNode is nullptr");
-
-    // auto dim_bound = node->loopnests_.size();
-    // for (unsigned i = 0; i < dim_bound; i++){ 
-    //     current_loop_state_.push_back(current_node_->loopnests_[i]);
-    // }
-    // std::string name = nameSub(node->name_);
-    // std::vector<std::string> tensorName = getInOutTensor(name);
-    // std::map<std::string, std::vector<std::string> > dimName = getDimName(tensorName);
-    // // 每一个循环为当前OP节点添加一个tensormap -- 需要改为input dim和output dim
-    // // 无需这么麻烦，只需要每个tile都能获取到对应子节点所包含的tensor即可 -- TBD
-    // // 每一个node的属性内均需要包含tensor的vector
-    // DimRange dimRange;
-    // std::vector<DimRange> dimRangeVec;
-    // for(unsigned i = 0; i < tensorName.size(); i++){
-    //     // output
-    //     dimRangeVec.clear();
-    //     if(i == tensorName.size() - 1){
-    //         auto tensor = tensorName[i];
-    //         auto tensor_dim = dimName[tensor];
-    //         for(auto dim_name: tensor_dim){
-    //             dimRange.dim_name_ = dim_name;
-    //             dimRange.low_bound_ = 0;
-    //             if(isLastLoop(dim_name)){
-    //                 dimRange.high_bound_ = 0;
-    //             }
-    //             dimRangeVec.push_back(dimRange);
-    //         }
-    //         TensorMap tensorMap(tensor, tensor_dim, dimRangeVec);
-    //         current_node_->output_tensors_.push_back(tensorMap);
-    //     }
-    //     // input
-    //     else{   
-    //         auto tensor = tensorName[i];
-    //         auto tensor_dim = dimName[tensor];
-    //         for(auto dim_name: tensor_dim){
-    //             dimRange.dim_name_ = dim_name;
-    //             dimRange.low_bound_ = 0;
-    //             if(isLastLoop(dim_name)){
-    //                 dimRange.high_bound_ = 0;
-    //             }
-    //             dimRangeVec.push_back(dimRange);
-    //         }
-    //         TensorMap tensorMap(tensor, tensor_dim, dimRangeVec);
-    //         current_node_->input_tensors_.push_back(tensorMap);
-    //     }
-    // }
-    // for (unsigned i = 0; i < dim_bound; i++){ 
-    //     current_loop_state_.pop_back();
-    // }
-    // current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
-}
-
-void PerfAnalysis::visitScopeLoop(const Node* node){
-
-    for (unsigned i = 0 ; i < node->get_children().size(); i++){
-        current_node_ = current_node_->get_children()[i];
-        node->get_children()[i]->accept(this);
-    }
-    current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
-}
-
-void PerfAnalysis::visitTransLoop(){
-    current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
-}
-
 // 还没乘offset -- TBD -- done
 int64_t PerfAnalysis::addCurrentTensor(bool is_input){
     int64_t data_movements_tmp = 0;
@@ -461,6 +350,7 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
         // current_node_->node_dim_bound_[dim_name_] = current_tile_loop_range;
         
         // *** 在最内层的dim中的计算当前级别的tile的IO张量信息对应的搬运量，每次都需要重新计算，并保留结果，供下次计算做覆盖
+        // 此处的firstloop的原因是我们考虑当前这个tile和上一层层级的数据交互
         if (current_dim_idx == dim_bound - 1 && isFirstLoop(current_node_->ori_start_, current_node_->current_start_)){
             // *** 计算data movement
             // input
@@ -468,19 +358,14 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
             // output
             auto output_dm = addCurrentTensor(false);
             // Print
-            if (false){
+            if (is_print_){
                 std::cout << current_node_->ori_node_->target_level_name << ": Input Tensor Data Movement: " << input_dm << std::endl;
                 std::cout << current_node_->ori_node_->target_level_name << ": Output Tensor Data Movement: " << output_dm << std::endl;
             }
             data_movements_ += input_dm + output_dm;
             // *** 计算latency
 
-            // auto target_level = current_node_->ori_node_->get_target_level_name();
-            // auto hardware_specs = evaluator_.arch_topo_.archTopo_map_;
-            // current_node_->process_latency_ = hardware_specs[target_level].compute_cycles;
             if (current_node_->get_parent() != nullptr){
-                // auto target_level = current_node_->ori_node_->get_target_level_name();
-                // auto hardware_specs = evaluator_.arch_topo_.archTopo_map_;
                 current_node_->input_latency_ = getInputLatency(current_node_, input_dm);
                 current_node_->output_latency_ = getOutputLatency(current_node_, output_dm);
             }
@@ -498,7 +383,7 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
             visitTileLoop(node, current_dim_idx + 1);
         }
         else{
-            // 计算data movement
+            // 计算子tile的latency
             current_node_->latency_sub_vec_.clear();
             for (unsigned i = 0 ; i < node->get_children().size(); i++){
                 current_node_ = current_node_->get_children()[i];
@@ -530,7 +415,7 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
 
     
     if (current_dim_idx == 0){
-        // 收集完全部子tile的latency，计算当前tile的总process latency
+        // 收集完全部子tile的latency，计算当前tile的总process latency（非整个tile的latency）
         auto process_latency = computeLatency(current_node_->latency_vec_);
         if(process_latency != 0){
             current_node_->process_latency_ = process_latency;
@@ -597,9 +482,6 @@ int64_t PerfAnalysis::computeLatency(std::vector<std::vector<Latency> > latency_
                 int64_t tmp_latency_all = tmp_latency.input_latency_ + tmp_latency.output_latency_ + tmp_latency.process_latency_;
                 if (total_latency_all < tmp_latency_all) total_latency = tmp_latency;
             }
-            // total_latency.input_latency_ = total_latency.input_latency_ * (latency_num + fanout - 1) / fanout;
-            // total_latency.output_latency_ = total_latency.output_latency_ * (latency_num + fanout - 1) / fanout;
-            // total_latency.process_latency_ = total_latency.process_latency_ * (latency_num + fanout - 1) / fanout;
         }
     }
     // WB for vec and vec fusion, only consider pipeline
@@ -643,45 +525,12 @@ int64_t PerfAnalysis::computeLatency(std::vector<std::vector<Latency> > latency_
                 int64_t tmp_latency_all = tmp_latency.input_latency_ + tmp_latency.output_latency_ + tmp_latency.process_latency_;
                 if (total_latency_all < tmp_latency_all) total_latency = tmp_latency;
             }
-            // total_latency.input_latency_ = total_latency.input_latency_ * (latency_num + fanout - 1) / fanout;
-            // total_latency.output_latency_ = total_latency.output_latency_ * (latency_num + fanout - 1) / fanout;
-            // total_latency.process_latency_ = total_latency.process_latency_ * (latency_num + fanout - 1) / fanout;
         }
     }
 
     process_latency = std::max(std::max(total_latency.input_latency_, total_latency.output_latency_), total_latency.process_latency_);
 
     return process_latency;
-
-    // for (unsigned i = 0; i < current_node_->get_children().size(), i++){
-    //     auto child_node = current_node_->get_children()[i];
-    //     if (child_node->ori_node_->get_type() == Node::Trans) continue;
-    //     if (is_forward || )
-    // }
-
-    // ScopeType scope_type;
-    // if (current_node_->get_children().size() == 1) {
-    //     if (current_node_->get_children()[0]->ori_node_->get_type() == Node::Scope) scope_type = current_node_->get_children()[0]->ori_node_->scope_type_;
-    //     else scope_type = ScopeType::Sequential;
-    // }
-    // else scope_type = ScopeType::Pipeline;
-
-    // // temporal
-    // if(is_temporal){
-
-    // }
-    // // spatial
-    // else{
-
-    // }
-
-    // ScopeType scope_type = current_node_->ori_node_->scope_type_;
-
-    // 对于interconnection的属性，修改input output latency
-
-    // 对于scope，计算latency
-    
-    // return 0;
 }
 
 bool PerfAnalysis::isLastLoop(std::string dim_name){

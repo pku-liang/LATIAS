@@ -95,6 +95,7 @@ class EvaNode{
 
     std::vector<int> ori_start_;
     std::vector<int> current_start_;
+    // 分两个部分，外层部分表示循环变化下的latency，内存部分表示每一次循环下不同tile的
     std::vector<std::vector<Latency>> latency_vec_;
     std::vector<Latency> latency_sub_vec_;
     unsigned sub_latency_num_ = 0;
@@ -321,7 +322,7 @@ class PerfAnalysis: public Visitor{
     int current_tile_idx_ = -1;
     int64_t data_movements_ = 0;
 
-
+    bool is_print_ = false;
     // tmp
 
     std::vector<loop::TileExp::Descriptor> current_loop_state_;
@@ -350,7 +351,7 @@ class PerfAnalysis: public Visitor{
     std::vector<int> tileLatency();
     std::vector<int> transLatency();
 
-    bool is_print_ = false;
+    // bool is_print_ = false;
     void visitScopeLoop(const Node* node);
     void visitScope(const ScopeNode* node) override;
     void visitTileLoop(const Node* node, unsigned current_loop_idx);

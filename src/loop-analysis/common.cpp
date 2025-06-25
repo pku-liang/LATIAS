@@ -83,6 +83,38 @@ std::pair<StEd_pair, bool> BFSOffsetLoop(EvaNode* node, std::string dim_name){
 }
 
 
+void Evaluator::evaluate(){
+    std::cout << "======== Evaluate ========" <<std::endl;
+    reset();
+    get_loop_count();
+    init_analysis();
+    // get_mem_info();
+    // analysis();
+    analysis_latias();
+    std::cout << "======== End Evaluate ========" <<std::endl;
+}
+
+void Evaluator::get_mem_info(){
+    // GetMemInfo pass_(*this, eva_root_);
+    // pass_.run(root_);
+}
+
+void Evaluator::init_analysis(){
+    InitAnalysis pass_(*this, eva_root_);
+    pass_.run(root_);
+}
+
+void Evaluator::analysis_latias(){
+    PerfAnalysis pass_(*this, eva_root_);
+    pass_.run(root_);
+    data_movements_ = pass_.data_movements_;
+    latency_ = pass_.current_node_->process_latency_;
+}
+
+void Evaluator::get_loop_count(){
+    GetLoopCount pass_(*this, eva_root_);
+    pass_.run(root_);
+}
 
 } // end namespace
 }

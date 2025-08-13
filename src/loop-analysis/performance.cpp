@@ -130,12 +130,12 @@ int PerfAnalysis::getOutputLatency(EvaNode* node, int64_t data_movement){
         source_level = findLastOpTrans(node);
     }
     if (node->get_parent() == nullptr) return 0;
-    // int parent_child_num = node->get_parent()->get_children().size();
-    // int current_node_position = findCurrentNodePosition(node);
     auto target_level = findTarget(node);
     auto connection = source_level + "2" + target_level.first;
     auto intercon = evaluator_.intercon_.intercon_attri_map_;
     auto bandwidth = intercon[connection].write_bandwidth_;
+
+    // 此处可以用搬运指令效率来做替换
     return int((data_movement + bandwidth - 1) / bandwidth);
 }
 
@@ -168,12 +168,13 @@ int PerfAnalysis::getInputLatency(EvaNode* node, int64_t data_movement){
 
     auto target_level = current_node_->ori_node_->get_target_level_name();
     if (node->get_parent() == nullptr) return 0;
-    // int parent_child_num = node->get_parent()->get_children().size();
     int current_node_position = findCurrentNodePosition(node);
     auto source_level = findSource(node, current_node_position);
     auto connection = source_level.first + "2" + target_level;
     auto intercon = evaluator_.intercon_.intercon_attri_map_;
     auto bandwidth = intercon[connection].read_bandwidth_;
+    // 此处可以用搬运指令效率来做替换
+    if (bandwidth == 0) return 0;
     return int((data_movement + bandwidth - 1) / bandwidth);
 }
 
@@ -187,7 +188,6 @@ std::pair<std::string, bool> PerfAnalysis::findSource(EvaNode* node, int current
             while(parent_node->ori_node_->get_type() != Node::Tile) parent_node = parent_node->get_parent();
             return std::pair<std::string, bool>(parent_node->ori_node_->get_target_level_name(), false);
         } 
-        // return std::pair<std::string, bool>("", false);
         // 上一个节点存在
         auto former_node = node->get_parent()->get_children()[current_node_position - 1];
         if (former_node->ori_node_->get_type() == Node::Trans){
@@ -437,9 +437,10 @@ int64_t PerfAnalysis::computeLatency(std::vector<std::vector<Latency> > latency_
     bool is_temporal = static_cast<const TileNode*>(current_node_->ori_node_)->get_tile_type() == TileNode::Temporal? true : false;
     bool is_forward = current_node_->ori_node_->dataflow_mode_ == Node::Forward? true : false;
     
-    // 这里目前是简化的写法，只针对单gemm、vec和融合vector，不能适应复杂情况
+    // 这里目前是简化的写法，只针对单gemm、vec和融合vector，不能适应复杂情况 -- TBD
     // for gemm
     if (is_forward){
+        // forward 模式默认流水线
         if (is_temporal){
             for (unsigned i = 0; i < latency_num; i++){
                 auto latency = latency_vec[i];

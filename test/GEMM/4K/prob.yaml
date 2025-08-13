@@ -1,0 +1,31 @@
+problem:
+  io:
+    ins: A, B
+    outs: C
+  dimensions: [M, N, K]
+  instance:
+    M: 4096
+    N: 4096
+    K: 4096
+    # L: 512
+
+  ops:
+  - name: GEMM1
+    dimensions: [M,N,K]
+    type: MATRIX
+    data-spaces:
+    - name: C
+      projection:
+        - [[M]]
+        - [[N]]
+      read-write: True 
+    - name: A 
+      projection:
+        - [[M]]
+        - [[K]]
+    - name: B
+      projection:
+        - [[K]]
+        - [[N]]
+    ins: A, B
+    out: C

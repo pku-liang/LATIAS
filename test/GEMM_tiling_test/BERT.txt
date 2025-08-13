@@ -1,0 +1,90 @@
+BERT_S
+input file: ./BERT_S_AP/Huawei.yaml
+input file: ./BERT_S_AP/interconnection.yaml
+input file: ./BERT_S_AP/map.yaml
+input file: ./BERT_S_AP/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 46137344
+Total cycle: 13056
+Total Latency (us): 7.25333
+input file: ./BERT_S_APT/Huawei.yaml
+input file: ./BERT_S_APT/interconnection.yaml
+input file: ./BERT_S_APT/map.yaml
+input file: ./BERT_S_APT/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 34078720
+Total cycle: 4096
+Total Latency (us): 2.27556
+
+BERT_B
+input file: ./BERT_B_AP/Huawei.yaml
+input file: ./BERT_B_AP/interconnection.yaml
+input file: ./BERT_B_AP/map.yaml
+input file: ./BERT_B_AP/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 103415808
+Total cycle: 19584
+Total Latency (us): 10.88
+input file: ./BERT_B_APT/Huawei.yaml
+input file: ./BERT_B_APT/interconnection.yaml
+input file: ./BERT_B_APT/map.yaml
+input file: ./BERT_B_APT/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 76283904
+Total cycle: 6144
+Total Latency (us): 3.41333
+
+BERT_L
+input file: ./BERT_L_AP/Huawei.yaml
+input file: ./BERT_L_AP/interconnection.yaml
+input file: ./BERT_L_AP/map.yaml
+input file: ./BERT_L_AP/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 183500800
+Total cycle: 26112
+Total Latency (us): 14.5067
+input file: ./BERT_L_APT/Huawei.yaml
+input file: ./BERT_L_APT/interconnection.yaml
+input file: ./BERT_L_APT/map.yaml
+input file: ./BERT_L_APT/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 135266304
+Total cycle: 8192
+Total Latency (us): 4.55111
+

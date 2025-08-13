@@ -55,6 +55,7 @@ void InitAnalysis::visitTrans(const TransNode* node){
 }
 
 
+
 std::vector<std::string> InitAnalysis::getInOutTensor(std::string name){
     std::vector<std::string> res;
     auto workload = evaluator_.workloads_.get_workload(name);
@@ -86,6 +87,7 @@ std::map<std::string, std::vector<std::string> > InitAnalysis::getDimName(std::v
     return res_dim_name;
 }
 
+// TBD -- 需要改变，需要根据实际的连接关系，为不同的内存层级添加张量信息
 void InitAnalysis::initTensor(const Node* node){
     // if(node){}
     for (unsigned i = 0 ; i < node->get_children().size(); i++){

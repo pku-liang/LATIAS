@@ -1,0 +1,14 @@
+input file: ./tmp/1280_2432/Huawei.yaml
+input file: ./tmp/1280_2432/interconnection.yaml
+input file: ./tmp/1280_2432/map.yaml
+input file: ./tmp/1280_2432/prob.yaml
+Begin ParseWorkload...
+======== Evaluate ========
+Loop count of Op Op::Add success!
+Offset Init Finish!
+Tensor Init Finish!
+Analysis Finish!
+======== End Evaluate ========
+Total DataMovement: 18677760
+Total cycle: 81920
+Total Latency (us): 45.5111

@@ -17,7 +17,10 @@
     scons -j16 --d --static
 
 ## Run Test
-bash test.sh
+    bash test.sh
+
+## Tutorial
+    cd Tutorial
 
 ## Vscode C++ debug mode
 

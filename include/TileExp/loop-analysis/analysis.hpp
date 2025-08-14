@@ -274,6 +274,7 @@ class InitAnalysis: public Visitor{
     bool is_print_ = true;
     int op_num_ = 0;
     std::unordered_map<std::string, std::pair<TensorMap, EvaNode*>> producer_map_;
+    std::vector<EvaNode*> leaf_vec_;
 
     void visitScope(const ScopeNode* node) override;
     void visitTile(const TileNode* node) override;

@@ -91,13 +91,14 @@ void PerfAnalysis::visitOp(const OpNode* node){
     current_node_->input_latency_ = 0;
     current_node_->output_latency_ = 0;
 
-
     // std::cout << current_node_->process_latency << std::endl;
     // recover current_node_
     
     current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
+
 }
 
+// 现transnode也需要参与latency计算，但仅有output_latency_一项，为实现这个目标，需要改动此前的latency计算方式 -- TBD
 void PerfAnalysis::visitTrans(const TransNode* node){
     if (node == nullptr) TILEEXP_ASSERT(false, "TransNode is nullptr");
     current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;
@@ -327,15 +328,11 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
     
     int loop_end;
     // 计算当前维度的循环结束范围
-    if (is_last_dim){ 
-        loop_end = current_node_->loopnests_[current_dim_idx].residual_end; 
-    }
-    else{ 
-        loop_end = current_node_->loopnests_[current_dim_idx].end; 
-    }
+    if (is_last_dim){ loop_end = current_node_->loopnests_[current_dim_idx].residual_end; }
+    else{ loop_end = current_node_->loopnests_[current_dim_idx].end; }
     
     current_node_->current_dim_skew_[dim_name_] = 0;
-    // 此处可简化加快 -- 0， 0->1，n-1->n -- 暂不实现
+    // 此处可简化加快 -- 0， 0->1，n-1->n -- 暂不实现 -- TBD
     // 此处需要添加当前loop的起始结束的信息，在PerfAnalysis中添加，如此可以计算出当前节点和子节点对应的范围
     for (; *loop_start < loop_end; *loop_start += loop_stride){
         if (*loop_start + loop_stride < loop_end){ vec_last_dim_[dim_name_].push_back(false); }
@@ -347,7 +344,6 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
         current_node_->current_offset_[dim_name_].push_back(curr_offset_tmp);
         current_node_->ori_start_.push_back(ori_start);
         current_node_->current_start_.push_back(*loop_start);
-        // current_node_->node_dim_bound_[dim_name_] = current_tile_loop_range;
         
         // *** 在最内层的dim中的计算当前级别的tile的IO张量信息对应的搬运量，每次都需要重新计算，并保留结果，供下次计算做覆盖
         // 此处的firstloop的原因是我们考虑当前这个tile和上一层层级的数据交互

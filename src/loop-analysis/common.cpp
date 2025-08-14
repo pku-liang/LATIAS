@@ -99,11 +99,13 @@ void Evaluator::get_mem_info(){
     // pass_.run(root_);
 }
 
+// 初始化pass
 void Evaluator::init_analysis(){
     InitAnalysis pass_(*this, eva_root_);
     pass_.run(root_);
 }
 
+// 实际分析pass
 void Evaluator::analysis_latias(){
     PerfAnalysis pass_(*this, eva_root_);
     pass_.run(root_);
@@ -111,6 +113,7 @@ void Evaluator::analysis_latias(){
     latency_ = pass_.current_node_->process_latency_;
 }
 
+// 确保维度匹配
 void Evaluator::get_loop_count(){
     GetLoopCount pass_(*this, eva_root_);
     pass_.run(root_);

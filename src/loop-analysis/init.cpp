@@ -99,6 +99,7 @@ void InitAnalysis::initTensor(const Node* node){
         auto name = nameSub(current_node_->ori_node_->get_name());
         auto tensorName = getInOutTensor(name);
         auto dimName = getDimName(tensorName);
+        
         for (unsigned i = 0; i < tensorName.size(); i++){
             auto tensor = tensorName[i];
             auto tensor_dim = dimName[tensor];
@@ -161,9 +162,23 @@ CommonNodePath InitAnalysis::findCommonNode(EvaNode* source, EvaNode* target){
         }
         if(common_node != nullptr) break;
     }
-    source_path.erase(source_path.begin() + i, source_path.end());
-    target_path.erase(target_path.begin() + j, target_path.end());
-    
+
+    auto source_idx = std::find(leaf_vec_.begin(), leaf_vec_.end(), source);
+    auto target_idx = std::find(leaf_vec_.begin(), leaf_vec_.end(), target);
+
+    auto distance = std::distance(source_idx, target_idx);
+
+    if (distance == 1){
+        source_path.erase(source_path.begin() + i - 1, source_path.end()); // 包含公共祖先，此时为写回模式
+    }
+    else{
+        source_path.clear();
+        for(int i = 1; i < distance; i++){
+            source_path.push_back(*(source_idx + i)); // 囊括trans node，暂不支持非连续op节点融合
+        }
+    }
+    target_path.erase(target_path.begin() + j, target_path.end()); // 不包含公共祖先
+
     if(common_node == nullptr){
         std::cout << "OP1: " << source->ori_node_->get_name()
                   << ", OP2: " << target->ori_node_->get_name()
@@ -227,12 +242,14 @@ void InitAnalysis::initOpTensor(const Node* node){
         auto name = nameSub(current_node_->ori_node_->get_name());
         auto tensorName = getInOutTensor(name);
         auto dimName = getDimName(tensorName);
+        leaf_vec_.push_back(current_node_); // 在这里完成对叶子节点的统计
+
         for (unsigned i = 0; i < tensorName.size(); i++){
             auto tensor = tensorName[i];
             auto tensor_dim = dimName[tensor];
             TensorMap tensorMap(tensor, tensor_dim);
             if(i == tensorName.size() - 1){
-                current_node_->add_output_tensors(tensorMap, tensor);
+                current_node_->add_output_tensors(tensorMap, tensor); // 目前的是仅在当前的Node下做output tensor的插入
                 std::pair<TensorMap, EvaNode*> tensorMap_pair(tensorMap, current_node_);
                 TILEEXP_ASSERT(producer_map_.insert({tensor, tensorMap_pair}).second, "Duplicate producer tensor");
             }
@@ -240,6 +257,10 @@ void InitAnalysis::initOpTensor(const Node* node){
                 current_node_->add_input_tensors(tensorMap, tensor);
             }
         }
+    }
+
+    if (current_node_->ori_node_->get_type() == Node::Trans){
+        leaf_vec_.push_back(current_node_); // 在这里完成对叶子节点的统计
     }
 
     current_node_ = current_node_->get_parent() != nullptr? current_node_->get_parent() : current_node_;

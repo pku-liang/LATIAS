@@ -1,0 +1,27 @@
+mapping:
+  node-type: Tile
+  dataflow-mode: Write-back
+  type: spatial
+  factors: M=16, N=64
+  fixed: 0
+  permutation: MN
+  target: MainMemory
+
+  subtree:
+  - node-type: Tile
+    dataflow-mode: Write-back
+    type: temporal
+    factors: M=16, N=1
+    permutation: NM
+    target: UB
+
+    subtree:
+    - node-type: OP
+      name: Sub
+      dataflow-mode: Write-back
+      factors: M=2, N=64 
+      permutation: NM
+      target: Vector
+
+
+

@@ -105,7 +105,7 @@ void Evaluator::init_analysis(){
     pass_.run(root_);
 }
 
-// 实际分析pass
+// 实际分析pass，得出数据搬运量和延迟的数据
 void Evaluator::analysis_latias(){
     PerfAnalysis pass_(*this, eva_root_);
     pass_.run(root_);

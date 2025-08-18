@@ -8,7 +8,6 @@ architecture:
     attributes:
       sizeKB: 1048576
       word-bits: 8
-
   - name: L1 
     level_num: 20
     level_name: SRAM 
@@ -47,11 +46,6 @@ architecture:
       depth: 64 
       block_size: 1024
       word-bits: 8
-      # read_bandwidth: 2
-      # write_bandwidth: 2
-      # successor: MainMemory, Vector
-      # alignments: 0
-      # layout: ND
 
   - name: Vector
     level_num: 40
@@ -61,8 +55,6 @@ architecture:
       meshX: 20
       meshY: 1
       compute_cycles: 1
-      # successor: MainMemory, L0C
-      # layout: ND
   
   - name: UB 
     level_num: 40
@@ -73,8 +65,3 @@ architecture:
       depth: 64 
       block_size: 1024
       word-bits: 256
-      # read_bandwidth: 2
-      # write_bandwidth: 2
-      # successor: MainMemory, Vector
-      # alignments: 0
-      # layout: ND

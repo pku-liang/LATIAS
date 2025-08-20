@@ -1,67 +1,76 @@
-mapping:
-  node-type: Tile 
-  type: temporal 
-  factors: M=64 L=32 
-  permutation: ML 
-  target: MainMemory 
-  
+architecture:
+  version: 0.2 
+  core_num: 60
+  vector_num: 40
+  matrix_num: 20
+  core_vec_rat: 1
+  core_mat_rat: 1
+
   subtree: 
-  - node-type: Scope 
-    type: Pipeline 
-    
-    subtree: 
-      - node-type: Tile 
-        type: Spatial 
-        factors: M=2 L=4 
-        split: 1
-        permutation: ML 
-        target: MainMemory
-        
-        subtree: 
-        - node-type: Tile 
-          type: temporal  
-          factors: M=4 L=4 K=64
-          permutation: MLK 
-          target: RegFile
-          
-          subtree:
-          - node-type: Op
-            name: GEMM1 
-            binding: M:M L:L K:K 
+   
+communication:
+  node_num: 2
+  num_per_node: 8
+  total_num: 16
+  intra_node_bw: xx
+  inter_node_bw: xx
+  intra_node_func: intra_func1
+  inter_node_func: inter_func1
+  
 
-      # A common spatial tile
-      - node-type: Tile
-        type: Spatial 
-        factors: M=2 L=4 
-        permutation: ML 
-        split: 1
-        target: MainMemory 
-
-        subtree:
-        - node-type: Scope 
-          type: Sequential 
-
-          subtree: 
-          - node-type: Tile 
-            type: temporal 
-            factors: M=4  L=4 
-            permutation: ML 
-            target: RegFile 
-            
-            subtree: 
-            - node-type: Op
-              name: EXP  
-              binding: M:M, L:L 
+stream:
+  subtree:
+    - name: stream_1
+      subtree: 
+      - name: GEMM 
+        type: compute
+        acc_num: 4
+        core_num: 80
+        core_type: Vector
+        input: [A, B]
+        output: [C]
+    - name: stream_2
+      subtree:
+      - name: VEC
+        type: compute
+        acc_num: 4
+        core_num: 80
+        core_type: Vector
+        input: [E]
+        output: [F]
 
 
-          - node-type: Tile 
-            type: temporal 
-            factors: M=4 L=4 N=64 
-            permutation: MLN 
-            target: RegFile
-            
-            subtree: 
-            - node-type: Op
-              name: GEMM2  
-              binding: M:M, L:L, N:N 
-      
+stream:
+  subtree:
+    - name: stream_1
+      subtree: 
+      - name: GEMM 
+        type: compute
+        acc_num: 4
+        core_num: 80
+        core_type: Vector
+        input: [A, B]
+        output: [C]
+      - name: ALLREDUCE1
+        type: communication
+        comm_type: allreduce
+        flag: 0
+        scale_div: 1 # ALLREDUCE不改变维度大小
+        tensor: [C]
+        dim: [N] # 表示在C张量的N维上进行allreduce
+    - name: stream_2
+      subtree:
+      - name: ALLREDUCE2
+        type: communication
+        comm_type: allreduce
+        flag: 0 # 在这里同步
+        scale_div: 1
+        tensor: [C]
+        dim: [N]
+      - name: VEC
+        type: compute
+        acc_num: 4
+        core_num: 80
+        core_type: Vector
+        input: [C]
+        output: [D]

@@ -23,7 +23,7 @@ void InitAnalysis::run(const Node* root){
     root->accept(this);
     is_init_tensor_ = false;
     std::cout << "Tensor Init Finish!" << std::endl;
-    // printRootIOTensor();
+    printRootIOTensor();
 }
 
 void InitAnalysis::visitScope(const ScopeNode* node){

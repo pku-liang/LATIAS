@@ -85,9 +85,9 @@ void PerfAnalysis::visitOp(const OpNode* node){
     auto target_level = current_node_->ori_node_->get_target_level_name();
     auto hardware_specs = evaluator_.arch_topo_.archTopo_map_;
     current_node_->process_latency_ = hardware_specs[target_level].compute_cycles;
-    // 此处
     // current_node_->input_latency_ = getInputLatency(current_node_, input_dm);
     // current_node_->output_latency_ = getOutputLatency(current_node_, output_dm);
+    // 此处认为op节点的cycle是完全通过compute cycle实现的，不考虑搬入搬出的latency
     current_node_->input_latency_ = 0;
     current_node_->output_latency_ = 0;
 
@@ -354,7 +354,7 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
             // output
             auto output_dm = addCurrentTensor(false);
             // Print
-            if (is_print_){
+            if (is_print_ == 2){
                 std::cout << current_node_->ori_node_->target_level_name << ": Input Tensor Data Movement: " << input_dm << std::endl;
                 std::cout << current_node_->ori_node_->target_level_name << ": Output Tensor Data Movement: " << output_dm << std::endl;
             }
@@ -444,7 +444,7 @@ int64_t PerfAnalysis::computeLatency(std::vector<std::vector<Latency> > latency_
                     total_latency.input_latency_ += latency[j].input_latency_;
                     total_latency.output_latency_ += latency[j].output_latency_;
                     total_latency.process_latency_ += latency[j].process_latency_;
-                    if (is_print_){
+                    if (is_print_ == 3){
                         std::cout << "Input OP: " << latency[j].input_latency_ << std::endl;
                         std::cout << "Output OP: " << latency[j].output_latency_ << std::endl;
                         std::cout << "Process OP: " << latency[j].process_latency_ << std::endl;

@@ -1,7 +1,7 @@
 problem:
   io:
     ins: A, B
-    outs: exp
+    outs: C
   dimensions: [M, N, K]
   instance:
     M: 128
@@ -29,37 +29,3 @@ problem:
         - [[N]]
     ins: A, B
     out: C
-   
-  - name: RELU 
-    dimensions: [M,N]
-    type: VECTOR
-    data-spaces:
-    - name: C
-      projection:
-        - [[M]]
-        - [[N]]
-    - name: relu 
-      projection: 
-        - [[M]]
-        - [[N]]
-      read-write: True 
-    ins: C
-    out: relu
-    inplace: True
-  
-  - name: EXP 
-    dimensions: [M,N]
-    type: VECTOR
-    data-spaces:
-    - name: relu
-      projection:
-        - [[M]]
-        - [[N]]
-    - name: exp 
-      projection: 
-        - [[M]]
-        - [[N]]
-      read-write: True 
-    ins: relu
-    out: exp
-    inplace: True

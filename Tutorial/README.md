@@ -105,6 +105,7 @@
   3. 在每一个节点中，需要描述节点具体信息，包括：1）节点类型（node-type）：节点类型包括Tile节点（描述内存层级）、OP节点（描述计算层级）、scope节点（描述节点间关系）以及Trans节点（描述传输关系）；2）数据流类型（dataflow-mode）：包括写回传输（Write-back，如UB和HBM之间）和单向传输（Forward，如L1到L0AB）；3）节点内关系类型（type）：包括空间关系（spatial）和时间关系（temporal）；4）分块参数（factors）：表示在该层级下的分块参数；5）循环顺序（permutation）：表示循环顺序，如MN表示内层循环是M，外层循环是N（TBD）；6）目标层级（target）：表示当前分块的目标层级，其中trans节点和scope节点不需要指定目标层级
   4. 对于scope节点，其可支持的描述属性为三种（顺序执行-Sequential、并行执行-Parallel、流水线执行-Pipeline），默认执行方式为pipeline，详见本目录PPT下15页内容
   5. 对于节点内关系类型，详见本目录PPT下15页内容，temporal表示该节点下的多个循环顺序执行，spatial表示该节点下的多个循环会被映射到多个硬件并行执行
+  6. 对于任意输入算子功能描述中各循环维度的大小，映射过程必须保证与描述值严格一致。例如，对于在维度 M = 1024 上进行三次分块的算子 [m0, m1, m2]，需满足 m0 × m1 × m2 = 1024。此外，为增强对尾块的表示能力，本方法所提出的循环表示中引入了尾块描述机制，即每层循环由主块和括号内的尾块组成，尾块部分仅在该层之前的所有循环均执行至末次循环时才进入执行。例如，维度 M = 576 的循环表示可为 [5, 8(4), 16]，其展开计算方式为 (5−1)×8×16 + 1×4×16（对于当前维度，仅当当前节点的父节点的全部该维度都在最后一次循环时，才会进入当前维度的括号内信息） = 576，从而保证对尾块的精确表达
 
 节点参考实例
 
@@ -179,6 +180,76 @@
         dataflow-mode: Forward
         target: MainMemory
 
+## 中间值输出
+
+更改./src/common.cpp中的verbose_level为1即可输出中间值，如：
+
+    input file: ./tests/01-test-graph-huawei/Huawei.yaml
+    input file: ./tests/01-test-graph-huawei/interconnection.yaml
+    input file: ./tests/01-test-graph-huawei/map.yaml
+    input file: ./tests/01-test-graph-huawei/prob.yaml
+    ****** Print Architencute Topology ******
+    Level Name: UB          , Level Type: Buffer , Num: 40   
+    Level Name: Vector      , Level Type: Vector , Num: 40   
+    Level Name: Cube        , Level Type: Matrix , Num: 20   
+    Level Name: L0AB        , Level Type: Buffer , Num: 20   
+    Level Name: L1          , Level Type: Buffer , Num: 20   
+    Level Name: L0C         , Level Type: Buffer , Num: 20   
+    Level Name: MainMemory  , Level Type: Buffer , Num: 1    
+    ****** End Print Architencute Topology ******
+    ****** Print InterConnection ******
+    Vector       --> UB          , Fan-in-out: 1   
+    UB           --> Vector      , Fan-in-out: 1   
+    UB           --> MainMemory  , Fan-in: 40  
+    Cube         --> L0C         , Fan-in-out: 1   
+    L0AB         --> Cube        , Fan-in-out: 1   
+    L1           --> L0AB        , Fan-in-out: 1   
+    L0C          --> MainMemory  , Fan-in: 20  
+    MainMemory   --> L1          , Fan-out: 20  
+    MainMemory   --> UB          , Fan-out: 40  
+    ****** End Print InterConnection ******
+    Begin ParseWorkload...
+    [WARNING] There are 2 alive workloads.
+    --------------Workloads------------
+    dimensions:[M,128][N,512][K,2816]
+    Tensors:
+      C[M][N]
+      A[M][K]
+      B[K][N]
+    Op: GEMM1(A,B,)->C, Compute Type: Matrix
+    UseFlattening: 0
+    Shape:
+    -----------Shape------------
+    FactorizedDimensionIDToName:0:M,1:N,2:K,
+    FactorizedDimensionNameToID:K:2,M:0,N:1,
+    FlattenedDimensionIDToName:0:M,1:N,2:K,
+    FlattenedDimensionNameToID:K:2,M:0,N:1,
+    NumDataSpaces:3
+    DataSpaceIDToName:0:C,1:A,2:B,
+    DataSpaceNameToID:A:1,B:2,C:0,
+    --------End Shape-----------
+    ------------End Workloads----------
+    ========Mapping Tree========
+    Target Mem Level: MainMemory, Node type: Tile::Spatial, Loop Nest: M[0, 1(1), 1] K[0, 11(11), 1] N[0, 4(4), 1]
+    Target Mem Level: L1, Node type: Tile::Temporal, Loop Nest: M[0, 1(1), 1] K[0, 2(2), 1] N[0, 1(1), 1]
+    Target Mem Level: L0AB, Node type: Tile::Temporal, Loop Nest: M[0, 8(8), 1] K[0, 8(8), 1] N[0, 8(8), 1]
+    Target Mem Level: Cube, Node type: Op::GEMM1, Loop Nest: M[0, 16(16), 1] K[0, 16(16), 1] N[0, 16(16), 1]
+    Target Mem Level: L0C, Node type: Trans
+    Target Mem Level: MainMemory, Node type: Trans
+    ======End Mapping Tree=======
+    ======== Evaluate ========
+    Loop count of Op Op::GEMM1 success!
+    Offset Init Finish!
+    Tensor Init Finish!
+    Analysis Finish!
+    ======== End Evaluate ========
+    Total DataMovement: 41451520
+    Total cycle: 3072
+    Total Latency (us): 1.70667
+
+## 其他
+
+1. 提供三种输出形式，分别在{$workspace}/src/common.cpp中的verbose_level体现，当verbose_level等于0，则仅输出核心信息，当verbose_level=1，则会输出细粒度的每一个层级的数据搬运量信息，当verbose_level=2，则会输出每一个循环变化下的信息，更改verbose_level后需要重新编译
 
 ## 当前限制
 
@@ -191,5 +262,7 @@
 ## 其他资源
 
 如需修改代码以增补功能或提供更细致的硬件使用，请参考CODE.md
+
+代码详细流程介绍在Tutorial.pptx内
 
 如对输入文件中所涉及的其他名词感兴趣，请参考timeloop官网，https://timeloop.csail.mit.edu/

@@ -235,7 +235,7 @@ class GetLoopCount: public Visitor{
     public:
     Evaluator& evaluator_;
     EvaNode* current_node_;
-    bool is_print_ = true;
+    // bool is_print_ = true;
     void visitScope(const ScopeNode* node) override;
     void visitTile(const TileNode* node) override;
     void visitOp(const OpNode* node) override;
@@ -244,7 +244,7 @@ class GetLoopCount: public Visitor{
     friend class Evaluator;
     GetLoopCount(Evaluator& evaluator, EvaNode* current_node): 
         evaluator_(evaluator), current_node_(current_node){}
-    void IsPrint(bool is_print){ is_print_ = is_print; }
+    // void IsPrint(bool is_print){ is_print_ = is_print; }
     std::map<std::string, int32_t> get_loop_count(std::vector<std::vector<loop::TileExp::Descriptor>> input_loopnests);
 };
 
@@ -323,7 +323,7 @@ class PerfAnalysis: public Visitor{
     int current_tile_idx_ = -1;
     int64_t data_movements_ = 0;
 
-    bool is_print_ = false;
+    int is_print_ = TileExp::verbose_level;
     // tmp
 
     std::vector<loop::TileExp::Descriptor> current_loop_state_;
@@ -426,7 +426,7 @@ class GetMemInfo: public Visitor{
     public:
     Evaluator& evaluator_;
     EvaNode* current_node_;
-    bool is_print_ = true;
+    // bool is_print_ = true;
     void visitScope(const ScopeNode* node) override;
     void visitTile(const TileNode* node) override;
     void visitOp(const OpNode* node) override;

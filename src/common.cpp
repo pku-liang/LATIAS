@@ -3,7 +3,7 @@
 
 namespace TileExp {
 
-int verbose_level = 1;
+int verbose_level = 2;
 
 config::CompoundConfigNode macros;
 

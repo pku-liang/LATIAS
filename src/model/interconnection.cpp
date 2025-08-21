@@ -58,11 +58,13 @@ void ParseInterConnection(config::CompoundConfigNode config, InterCon& intercon,
     for (int i = 0; i < config_.getLength(); i++){
         auto config_node = config_[i];
         std::string source, target;
+        unsigned int bandwidth;
         config_node.lookupValue("source", source);
         config_node.lookupValue("target", target);
-        unsigned int read_bandwidth, write_bandwidth;
-        config_node.lookupValue("read_bandwidth", read_bandwidth);
-        config_node.lookupValue("write_bandwidth", write_bandwidth);
+        config_node.lookupValue("bandwidth", bandwidth);
+        // unsigned int read_bandwidth, write_bandwidth;
+        // config_node.lookupValue("read_bandwidth", read_bandwidth);
+        // config_node.lookupValue("write_bandwidth", write_bandwidth);
         std::string con_type;
         config_node.lookupValue("type", con_type);
         auto type = String2ConType.find(con_type);
@@ -72,7 +74,7 @@ void ParseInterConnection(config::CompoundConfigNode config, InterCon& intercon,
             target = con_type;
         }
 
-        InterConNode node(target, source, read_bandwidth, write_bandwidth, String2ConType[con_type]);
+        InterConNode node(target, source, bandwidth, String2ConType[con_type]);
         unsigned int fan_target_, fan_source_;
         if (target == con_type){
             fan_target_ = 1;

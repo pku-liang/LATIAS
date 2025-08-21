@@ -41,23 +41,6 @@ problem:
         - [[M]]
         - [[N]]
       read-write: True
-    ins: relu
+    ins: C
     out: exp
     inplace: True
-
-  # - name: RELU
-  #   dimensions: [M,N]
-  #   type: VECTOR
-  #   data-spaces:
-  #   - name: C
-  #     projection:
-  #       - [[M]]
-  #       - [[N]]
-  #   - name: relu
-  #     projection:
-  #       - [[M]]
-  #       - [[N]]
-  #     read-write: True
-  #   ins: C
-  #   out: relu
-  #   inplace: True

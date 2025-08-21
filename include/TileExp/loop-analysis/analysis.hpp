@@ -172,6 +172,7 @@ class Evaluator{
     const Node* root_;
 
     std::vector<MemLevel> mem_levels_;
+    std::vector<EvaNode*> leaf_vec_;
 
     int64_t data_movements_ = 0; // bits
     double latency_ = 0.0;
@@ -294,6 +295,7 @@ class InitAnalysis: public Visitor{
     CommonNodePath findCommonNode(EvaNode* source, EvaNode* target);
     std::vector<std::string> getInOutTensor(std::string name);
     std::map<std::string, std::vector<std::string> > getDimName(std::vector<std::string> tensorName);
+    std::vector<EvaNode*> getLeafVec() const { return leaf_vec_; }
 
     friend class Evaluator;
 
@@ -322,6 +324,7 @@ class PerfAnalysis: public Visitor{
     std::unordered_map<std::string, int64_t> dim_skew;
     int current_tile_idx_ = -1;
     int64_t data_movements_ = 0;
+    std::vector<EvaNode*> leaf_vec_;
 
     int is_print_ = TileExp::verbose_level;
     // tmp
@@ -352,6 +355,8 @@ class PerfAnalysis: public Visitor{
     std::vector<int> tileLatency();
     std::vector<int> transLatency();
 
+
+
     // bool is_print_ = false;
     void visitScopeLoop(const Node* node);
     void visitScope(const ScopeNode* node) override;
@@ -368,13 +373,16 @@ class PerfAnalysis: public Visitor{
     // void getOffset(const Node* node);
     bool isLastLoop(std::string dim_name);
     bool isFirstLoop(std::vector<int> loop_ori, std::vector<int> loop_current);
-    int64_t addCurrentTensor(bool is_input);
+    // int64_t addCurrentTensor(bool is_input);
+    std::pair<int64_t, int64_t> addCurrentTensor(bool is_input);
     int findCurrentNodePosition(EvaNode* node);
-    int getInputLatency(EvaNode* node, int64_t data_movement);
+    int getInputLatency(EvaNode* node, int64_t dm_tile, int64_t dm_trans);
     std::string findLastOpTrans(EvaNode* node);
     int getOutputLatency(EvaNode* node, int64_t data_movement);
     std::pair<std::string, bool> findSource(EvaNode* node, int current_node_position);
     std::pair<std::string, bool> findTarget(EvaNode* node);
+    void setLeafVec(std::vector<EvaNode*> leaf_vec){ leaf_vec_ = leaf_vec; }
+    EvaNode* findFirstLeaf(EvaNode* node);
 
     void PrintDimLoop(std::string dim_name){
         std::cout << "Loop Name: " << dim_name;

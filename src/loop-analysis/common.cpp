@@ -29,13 +29,23 @@ void EvaNode::printLoop() const {
                      ", Node type: " << ori_node_->get_name() << std::endl;
     }
     else {
-        if (ori_node_->get_type() == Node::Trans) 
-            std::cout << "Target Mem Level: " << ori_node_->get_target_level_name() << ", Node type: " << ori_node_->get_name() << std::endl;
+        if (ori_node_->get_type() == Node::Trans) {
+            std::cout << "Target Mem Level: " << ori_node_->get_target_level_name();
+            std::cout << ", Output Tensor: ";
+            for (auto child: this->output_tensors_) {
+                std::cout << child.first;
+            }
+            std::cout << std::endl;
+        }
         else{
-            std::cout << "Target Mem Level: " << ori_node_->get_target_level_name() << ", Node type: " << ori_node_->get_name();
-            std::cout << ", Loop Nest:";
-            for (auto loop: ori_node_->loopnests_) {
-                std::cout << " " << loop.name_ << "[" << loop.start << ", " << loop.end << "(" << loop.residual_end << "), " << loop.stride << "]";
+            std::cout << "Target Mem Level: " << ori_node_->get_target_level_name();
+            std::cout << ", Input Tensor: ";
+            for (auto child: this->input_tensors_) {
+                std::cout << child.first;
+            }
+            std::cout << ", Output Tensor: ";
+            for (auto child: this->output_tensors_) {
+                std::cout << child.first;
             }
             std::cout << std::endl;
         }
@@ -88,9 +98,9 @@ void Evaluator::evaluate(){
     reset();
     get_loop_count();
     init_analysis();
+    analysis_latias();
     // get_mem_info();
     // analysis();
-    analysis_latias();
     std::cout << "======== End Evaluate ========" <<std::endl;
 }
 
@@ -103,11 +113,18 @@ void Evaluator::get_mem_info(){
 void Evaluator::init_analysis(){
     InitAnalysis pass_(*this, eva_root_);
     pass_.run(root_);
+    leaf_vec_ = pass_.getLeafVec();
+    if (TileExp::verbose_level > 0) {
+        std::cout << "**** Tensor Path ****" <<std::endl;
+        eva_root_->printLoop();
+        std::cout << "**** End Tensor Path ****" <<std::endl;
+    }
 }
 
 // 实际分析pass，得出数据搬运量和延迟的数据
 void Evaluator::analysis_latias(){
     PerfAnalysis pass_(*this, eva_root_);
+    pass_.setLeafVec(leaf_vec_);
     pass_.run(root_);
     data_movements_ = pass_.data_movements_;
     latency_ = pass_.current_node_->process_latency_;

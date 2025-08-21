@@ -107,14 +107,20 @@ void InitAnalysis::initTensor(const Node* node){
             // output tensor
             if(i == tensorName.size() - 1){
                 // current_node_->add_output_tensors(tensorMap, tensor);
-                // 如果是最后一个，则直接向上遍历，逐个添加至output
-                if (op_num_ == 0) addParentTensor(current_node_, tensorMap, false);
+                // 如果是最后一个，则逐个添加至output
+                if (op_num_ == 0){
+                    auto source_idx = find(leaf_vec_.begin(), leaf_vec_.end(), current_node_);
+                    for (; source_idx != leaf_vec_.end(); source_idx++) {
+                        (*source_idx)->add_output_tensors(tensorMap, tensorMap.tensor_name_);
+                    }
+                    addParentTensor(*(source_idx - 1), tensorMap, false);
+                } 
             }
             else{
                 // producer存在tensor
                 if (producer_map_.count(tensor)){
                     auto producer_node_ = producer_map_[tensor].second;
-                    auto common_node_path_ = findCommonNode(producer_node_, current_node_);
+                    auto common_node_path_ = findCommonNode(producer_node_, current_node_); // TBD-待确认是否是真的对Trans节点添加了Node信息-已确认
                     // auto common_node_ = common_node_path_.common_node_;
                     auto producer_path_ = common_node_path_.producer_path_;
                     auto consumer_path_ = common_node_path_.consumer_path_;
@@ -337,6 +343,7 @@ void InitAnalysis::getOffset(const Node* node){
         }
     }
     else{
+        // 此处没对Trans的offset处理 -- TBD -- 不对offset做处理，计算时直接获取同级的上一个节点对应的维度值
         if(node->get_type() == Node::Trans){ }
         else{
             for (auto tmp_loop: node->loopnests_){

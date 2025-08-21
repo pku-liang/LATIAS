@@ -27,6 +27,7 @@ class InterConNode{
 public:
     std::string target_;
     std::string source_;
+    unsigned int bandwidth_;
     unsigned int read_bandwidth_;
     unsigned int write_bandwidth_;
     ConType con_type_;
@@ -35,6 +36,7 @@ public:
     unsigned int fanout_ = 0;
 
     InterConNode(){};
+    InterConNode(std::string target, std::string source, unsigned int bandwidth, ConType con_type): target_(target), source_(source), bandwidth_(bandwidth), con_type_(con_type){};
     InterConNode(std::string target, std::string source, unsigned int read_bandwidth, unsigned int write_bandwidth, ConType con_type): target_(target), source_(source), read_bandwidth_(read_bandwidth), write_bandwidth_(write_bandwidth), con_type_(con_type){};
 };
 

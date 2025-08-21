@@ -35,27 +35,3 @@ mapping:
         target: Vector
 
 
-      # - node-type: Op
-      #   name: RELU
-      #   dataflow-mode: Write-back
-      #   factors: M=1, N=128
-      #   permutation: MN
-      #   target: Vector
-    # - node-type: OP
-    #   name: Add
-    #   dataflow-mode: Write-back
-    #   factors: N=128, M=1
-    #   permutation: NM
-    #   target: Vector
-
-    # # subtree:
-    # - node-type: OP
-    #   name: RELU
-    #   dataflow-mode: Write-back
-    #   factors: N=128, M=1
-    #   permutation: NM
-    #   target: Vector
-
-
-
-

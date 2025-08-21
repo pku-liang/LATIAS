@@ -99,6 +99,7 @@ class BufferLevel : public Level
     Attribute<std::uint64_t> instances;    
     Attribute<std::uint64_t> meshX;
     Attribute<std::uint64_t> meshY;
+    Attribute<double> bandwidth;
     Attribute<double> shared_bandwidth;
     Attribute<double> read_bandwidth;
     Attribute<double> write_bandwidth;
@@ -181,6 +182,7 @@ class BufferLevel : public Level
         ar& BOOST_SERIALIZATION_NVP(shared_bandwidth);
         ar& BOOST_SERIALIZATION_NVP(read_bandwidth);
         ar& BOOST_SERIALIZATION_NVP(write_bandwidth);
+        ar& BOOST_SERIALIZATION_NVP(bandwidth);
         ar& BOOST_SERIALIZATION_NVP(multiple_buffering);
         ar& BOOST_SERIALIZATION_NVP(min_utilization);
         ar& BOOST_SERIALIZATION_NVP(num_ports);
@@ -223,6 +225,7 @@ class BufferLevel : public Level
     problem::PerDataSpace<std::uint64_t> address_generations;
     problem::PerDataSpace<std::uint64_t> temporal_reductions;
     problem::PerDataSpace<double> shared_bandwidth;
+    problem::PerDataSpace<double> bandwidth;
     problem::PerDataSpace<double> read_bandwidth;
     problem::PerDataSpace<double> write_bandwidth;
     problem::PerDataSpace<double> energy_per_algorithmic_access;
@@ -349,6 +352,7 @@ class BufferLevel : public Level
         ar& BOOST_SERIALIZATION_NVP(temporal_reductions);
         ar& BOOST_SERIALIZATION_NVP(shared_bandwidth);
         ar& BOOST_SERIALIZATION_NVP(read_bandwidth);
+        ar& BOOST_SERIALIZATION_NVP(bandwidth);
         ar& BOOST_SERIALIZATION_NVP(write_bandwidth);
         ar& BOOST_SERIALIZATION_NVP(energy_per_algorithmic_access);
         ar& BOOST_SERIALIZATION_NVP(energy_per_access);

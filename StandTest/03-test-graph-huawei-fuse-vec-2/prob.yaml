@@ -4,8 +4,8 @@ problem:
     outs: exp
   dimensions: [M, N]
   instance:
-    M: 4096
-    N: 4096
+    M: 896
+    N: 2816
 
   ops:
   - name: SUB
@@ -28,23 +28,6 @@ problem:
     ins: A, B
     out: C
 
-  # - name: RELU
-  #   dimensions: [M,N]
-  #   type: VECTOR
-  #   data-spaces:
-  #   - name: C
-  #     projection:
-  #       - [[M]]
-  #       - [[N]]
-  #   - name: relu
-  #     projection:
-  #       - [[M]]
-  #       - [[N]]
-  #     read-write: True
-  #   ins: C
-  #   out: relu
-  #   inplace: True
-
   - name: Exp
     dimensions: [M,N]
     type: VECTOR
@@ -58,6 +41,6 @@ problem:
         - [[M]]
         - [[N]]
       read-write: True
-    ins: relu
+    ins: C
     out: exp
     inplace: True

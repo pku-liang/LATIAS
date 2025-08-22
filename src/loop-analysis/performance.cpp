@@ -1,6 +1,8 @@
 #include "TileExp/loop-analysis/analysis.hpp"   
 #include "TileExp/mapping/mapping.hpp"
 
+// using TileExp::ScopeType;
+
 namespace TileExp{
 
 namespace Analysis{
@@ -232,113 +234,121 @@ void PerfAnalysis::visitTileLoop(const Node* node, unsigned current_dim_idx){
     *loop_start = ori_start;
 }
 
+// TBD -- done
+Latency PerfAnalysis::computeScopeLatency(std::vector<Latency> latency_vec, ScopeType scope_type){
 
+    Latency result_latency;
+    // auto sub_latency_num = latency_vec.size();
+    auto intercon_attri_map = evaluator_.intercon_.intercon_attri_map_;
+
+    auto children = current_node_->get_children();
+    if (children[0]->ori_node_->get_type() == Node::Scope) {
+        children = children[0]->get_children();
+    }
+
+    // 需要围绕这latency类进行
+    int child_num = 0;
+    auto dm_latency = 0;
+    for (const auto& latency : latency_vec) {
+        auto interConNode = static_cast<const TileNode*>(current_node_->ori_node_)->getInterConNode(intercon_attri_map, child_num);
+        auto interConType = interConNode.con_type_;
+        if (interConType == Hardware::InterConnection::ConType::HD) {
+            dm_latency = latency.input_latency_ + latency.output_latency_;
+        }
+        else if (interConType == Hardware::InterConnection::ConType::FD) {
+            dm_latency = std::max(latency.input_latency_, latency.output_latency_);
+        }
+
+        if (scope_type == ScopeType::Pipeline) {
+            result_latency.input_latency_ += dm_latency;
+            result_latency.process_latency_ += latency.process_latency_;
+            result_latency.output_latency_ += dm_latency;
+        }
+        else if (scope_type == ScopeType::Sequential) {
+            result_latency.input_latency_ += latency.output_latency_ + latency.input_latency_;
+            result_latency.output_latency_ += latency.output_latency_ + latency.input_latency_;
+            result_latency.process_latency_ += latency.process_latency_;
+        }
+        else if (scope_type == ScopeType::Parallel) {
+            result_latency.input_latency_ = std::max(result_latency.input_latency_, latency.input_latency_);
+            result_latency.output_latency_ = std::max(result_latency.output_latency_, latency.output_latency_);
+            result_latency.process_latency_ = std::max(result_latency.process_latency_, latency.process_latency_);
+        }
+        child_num++;
+    }
+    return result_latency;
+    
+}
+ 
 // only for tile node
 int64_t PerfAnalysis::computeLatency(std::vector<std::vector<Latency> > latency_vec){
+    
     TILEEXP_ASSERT(latency_vec.size() != 0, "latency_vec is empty");
+    
     auto latency_num = latency_vec.size();
-    auto sub_latency_num = latency_vec[0].size();
+    // auto sub_latency_num = latency_vec[0].size();
+    // int64_t process_latency = 0;
+    ScopeType scopeType = ScopeType::Pipeline;
     
-    int64_t process_latency = 0;
     Latency total_latency;
-    bool is_temporal = static_cast<const TileNode*>(current_node_->ori_node_)->get_tile_type() == TileNode::Temporal? true : false;
-    bool is_forward = current_node_->ori_node_->dataflow_mode_ == Node::Forward? true : false;
-    
-    // 这里目前是简化的写法，只针对单gemm、vec和融合vector，不能适应复杂情况 -- TBD
-    // for gemm
-    if (is_forward){
-        // forward 模式默认流水线
-        if (is_temporal){
-            for (unsigned i = 0; i < latency_num; i++){
-                auto latency = latency_vec[i];
-                for (unsigned j = 0; j < sub_latency_num; j++){
-                    total_latency.input_latency_ += latency[j].input_latency_;
-                    total_latency.output_latency_ += latency[j].output_latency_;
-                    total_latency.process_latency_ += latency[j].process_latency_;
-                    if (is_print_ == 3){
-                        std::cout << "Input OP: " << latency[j].input_latency_ << std::endl;
-                        std::cout << "Output OP: " << latency[j].output_latency_ << std::endl;
-                        std::cout << "Process OP: " << latency[j].process_latency_ << std::endl;
-                        is_print_ = false;
-                    }
-                }
-            }
-        }
-        //spatial
-        else{
-            unsigned fanout = 20;
-            auto intercon = evaluator_.intercon_.intercon_attri_map_;
-            auto con_type = intercon["MainMemory2L1"].con_type_;
-            for (unsigned i = 0; i < fanout; i++){
-                Latency tmp_latency;
-                for (unsigned j = 0; j < (latency_num + fanout - 1) / fanout; j++){
-                    if (j * fanout + i >= latency_num) break;
-                    auto latency = latency_vec[j * fanout + i];
-                    for (unsigned k = 0; k < sub_latency_num; k++){
-                        if(con_type == Hardware::InterConnection::BC){
-                            tmp_latency.input_latency_ += latency[k].input_latency_;
-                            tmp_latency.output_latency_ += latency[k].output_latency_;
-                        }
-                        else{
-                            tmp_latency.input_latency_ += latency[k].input_latency_ + latency[k].output_latency_;
-                            tmp_latency.output_latency_ += latency[k].input_latency_ + latency[k].output_latency_;
-                        }
-                        tmp_latency.process_latency_ += latency[k].process_latency_;
-                    }
-                }
-                int64_t total_latency_all = total_latency.input_latency_ + total_latency.output_latency_ + total_latency.process_latency_;
-                int64_t tmp_latency_all = tmp_latency.input_latency_ + tmp_latency.output_latency_ + tmp_latency.process_latency_;
-                if (total_latency_all < tmp_latency_all) total_latency = tmp_latency;
-            }
-        }
-    }
-    // WB for vec and vec fusion, only consider pipeline
-    else{
-        if (is_temporal){
-            for (unsigned i = 0; i < latency_num; i++){
-                auto latency = latency_vec[i];
-                for (unsigned j = 0; j < sub_latency_num; j++){
-                    auto tmp = latency[j].input_latency_ + latency[j].output_latency_ + latency[j].process_latency_;
-                    total_latency.input_latency_ += tmp;
-                    total_latency.output_latency_ += tmp;
-                    total_latency.process_latency_ += tmp;
-                }
-            }
-        }
-        else{
-            auto intercon = evaluator_.intercon_.intercon_attri_map_;
-            // auto bandwidth = intercon["UB2MainMemory"].read_bandwidth_;
-            auto con_type = intercon["UB2MainMemory"].con_type_;
-            // if (con_type == Hardware::InterConnection::FD){
-            // }
-            unsigned fanout = 40;
-            for (unsigned i = 0; i < fanout; i++){
-                Latency tmp_latency;
-                for (unsigned j = 0; j < (latency_num + fanout - 1) / fanout; j++){
-                    if (j * fanout + i >= latency_num) break;
-                    auto latency = latency_vec[j * fanout + i];
-                    for (unsigned k = 0; k < sub_latency_num; k++){
-                        if(con_type == Hardware::InterConnection::FD || con_type == Hardware::InterConnection::BC){
-                            tmp_latency.input_latency_ += latency[k].input_latency_;
-                            tmp_latency.output_latency_ += latency[k].output_latency_;
-                        }
-                        else{
-                            tmp_latency.input_latency_ += latency[k].input_latency_ + latency[k].output_latency_;
-                            tmp_latency.output_latency_ += latency[k].input_latency_ + latency[k].output_latency_;
-                        }
-                        tmp_latency.process_latency_ += latency[k].process_latency_;
-                    }
-                }
-                int64_t total_latency_all = total_latency.input_latency_ + total_latency.output_latency_ + total_latency.process_latency_;
-                int64_t tmp_latency_all = tmp_latency.input_latency_ + tmp_latency.output_latency_ + tmp_latency.process_latency_;
-                if (total_latency_all < tmp_latency_all) total_latency = tmp_latency;
-            }
-        }
+    bool is_temporal = static_cast<const TileNode*>(current_node_->ori_node_)->get_tile_type() == TileNode::Temporal ? true : false;
+    // bool is_forward = current_node_->ori_node_->dataflow_mode_ == Node::Forward ? true : false;
+
+    auto source = current_node_->ori_node_->get_target_level_name();
+    auto child = current_node_->get_children();
+
+    if (child[0]->ori_node_->get_type() == Node::Scope){
+        scopeType = static_cast<const ScopeNode*>(child[0]->ori_node_)->get_scope_type();
+        child = child[0]->get_children();
     }
 
-    process_latency = std::max(std::max(total_latency.input_latency_, total_latency.output_latency_), total_latency.process_latency_);
+    auto interConNode = static_cast<const TileNode*>(current_node_->ori_node_)->getInterConNode(evaluator_.intercon_.intercon_attri_map_);
+    auto interConType = interConNode.con_type_;
 
-    return process_latency;
+    if (is_temporal){
+        for (unsigned i = 0; i < latency_num; i++){
+            auto latency = latency_vec[i];
+            Latency block_latency = computeScopeLatency(latency, scopeType);
+            total_latency.input_latency_ += block_latency.input_latency_;
+            total_latency.process_latency_ += block_latency.process_latency_;
+            total_latency.output_latency_ += block_latency.output_latency_;
+        }
+        return std::max(std::max(total_latency.input_latency_, total_latency.process_latency_), total_latency.output_latency_);
+    }
+    else {
+        // Assert fanout正确性
+        // TILEEXP_ASSERT(interConNode.fanout_ > latency_num, "Fanout num is smaller than loop num");
+
+        auto repeat = (latency_num + interConNode.fanout_ - 1) / interConNode.fanout_;
+
+        int64_t result_latency = 0;
+        for (unsigned i = 0; i < repeat; i++){
+            int64_t core_latency = 0;
+            for (unsigned j = 0; j < interConNode.fanout_; j++){
+                if (i * interConNode.fanout_ + j >= latency_num) break;
+                auto latency = latency_vec[i * interConNode.fanout_ + j];
+                Latency block_latency = computeScopeLatency(latency, scopeType);
+                if (interConType == Hardware::InterConnection::UC){
+                    total_latency.input_latency_ = std::max(block_latency.input_latency_, total_latency.input_latency_);
+                    total_latency.output_latency_ = std::max(block_latency.output_latency_, total_latency.output_latency_);
+                    total_latency.process_latency_ = std::max(block_latency.process_latency_, total_latency.process_latency_);
+                }
+                else if (interConType == Hardware::InterConnection::BC){
+                    core_latency = std::max(core_latency, block_latency.input_latency_ + block_latency.output_latency_ + block_latency.process_latency_);
+                }
+            }
+            if (interConType == Hardware::InterConnection::UC){
+                core_latency = std::max(total_latency.input_latency_, total_latency.output_latency_) * (repeat - i * interConNode.fanout_) + total_latency.process_latency_;
+            }
+            result_latency += core_latency;
+        }
+        return result_latency;
+    }
+
+    return 0;
+    // process_latency = std::max(std::max(total_latency.input_latency_, total_latency.output_latency_), total_latency.process_latency_);
+
+    // return process_latency;
 }
 
 

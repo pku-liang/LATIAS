@@ -1,5 +1,5 @@
 yaml_dir="."
-out_csv="$yaml_dir/model_data17.csv"
+out_csv="$yaml_dir/model_data_test.csv"
 
 echo "M,N,latency(us)" > $out_csv
 

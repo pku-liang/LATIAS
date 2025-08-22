@@ -127,6 +127,7 @@ class EvaNode{
     TensorMap get_output_tensors(std::string name){ return output_tensors_[name]; }
     // add tensor to current node, and compute Data Movements
 
+    
     void updateTensor(std::unordered_map<std::string, TensorMap> input_tensors, std::unordered_map<std::string, TensorMap> output_tensors){
         for (auto& input_tensor: input_tensors){
             auto tensor_name = input_tensor.first;
@@ -383,6 +384,8 @@ class PerfAnalysis: public Visitor{
     std::pair<std::string, bool> findTarget(EvaNode* node);
     void setLeafVec(std::vector<EvaNode*> leaf_vec){ leaf_vec_ = leaf_vec; }
     EvaNode* findFirstLeaf(EvaNode* node);
+
+    Latency computeScopeLatency(std::vector<Latency> latency_vec, ScopeType scope_type);
 
     void PrintDimLoop(std::string dim_name){
         std::cout << "Loop Name: " << dim_name;

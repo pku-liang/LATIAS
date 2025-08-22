@@ -121,6 +121,7 @@ public:
     std::string get_target_level_name() const { return target_level_name; };
     std::vector<const Node*> get_children() const { return children_; };
     type_t get_type() const { return type_; };
+    // ScopeType get_scope_type() const { return scope_type_; };
     std::vector<loop::TileExp::Descriptor> get_loops() const {return loopnests_;}
 
     // parser --  loop bounds {name, [bound, residual bound]}
@@ -133,6 +134,35 @@ public:
     void add_child(const Node* child);
     void set_parent(const Node* parent) const {parent_ = parent;}
     const Node* get_parent() const {return parent_;}
+
+    Hardware::InterConnection::InterConNode getInterConNode(std::unordered_map<source2target, Hardware::InterConnection::InterConNode> intercon_attri_map, int idx = 0) const {
+        std::string source_name;
+        auto children = this->get_children();
+        
+        if(children[0]->get_type() == Node::Scope){
+            children = children[0]->get_children();
+        }
+
+        auto child = children[idx];
+        
+        if (child->get_type() == Node::Trans){
+            auto prev_child = children[idx - 1]; 
+            while (prev_child->get_children().size() > 0) {
+                prev_child = prev_child->get_children()[prev_child->get_children().size() - 1];
+            }
+            source_name = prev_child->get_target_level_name();
+        }
+        else {
+            source_name = this->get_target_level_name();
+        }
+
+        auto target_name = child->get_target_level_name();
+        auto intername_ = source_name + "2" + target_name;
+        if(intercon_attri_map.find(intername_) != intercon_attri_map.end()){
+            return intercon_attri_map[intername_];
+        }
+        TILEEXP_ASSERT(false, "Do not find inter-connection");
+    }
 
     void Print() const;
 

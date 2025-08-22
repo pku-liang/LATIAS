@@ -2,7 +2,7 @@ mapping:
   node-type: Tile
   dataflow-mode: Write-back
   type: spatial
-  factors: M=32, N=32
+  factors: M=7, N=22
   fixed: 0
   permutation: MN
   target: MainMemory

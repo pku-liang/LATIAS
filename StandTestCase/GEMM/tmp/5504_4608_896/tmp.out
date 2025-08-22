@@ -1,0 +1,117 @@
+input file: ./tmp/5504_4608_896/Huawei.yaml
+input file: ./tmp/5504_4608_896/interconnection.yaml
+input file: ./tmp/5504_4608_896/map.yaml
+input file: ./tmp/5504_4608_896/prob.yaml
+****** Print Architencute Topology ******
+Level Name: UB          , Level Type: Buffer , Num: 40   
+Level Name: Vector      , Level Type: Vector , Num: 40   
+Level Name: Cube        , Level Type: Matrix , Num: 20   
+Level Name: L0AB        , Level Type: Buffer , Num: 20   
+Level Name: L1          , Level Type: Buffer , Num: 20   
+Level Name: L0C         , Level Type: Buffer , Num: 20   
+Level Name: MainMemory  , Level Type: Buffer , Num: 1    
+****** End Print Architencute Topology ******
+****** Print InterConnection ******
+Vector       --> UB          , Fan-in-out: 1   
+UB           --> Vector      , Fan-in-out: 1   
+UB           --> MainMemory  , Fan-in: 40  
+Cube         --> L0C         , Fan-in-out: 1   
+L0AB         --> Cube        , Fan-in-out: 1   
+L1           --> L0AB        , Fan-in-out: 1   
+L0C          --> MainMemory  , Fan-in: 20  
+MainMemory   --> L1          , Fan-out: 20  
+MainMemory   --> UB          , Fan-out: 40  
+****** End Print InterConnection ******
+Begin ParseWorkload...
+--------------Workloads------------
+dimensions:[M,5504][N,4608][K,896]
+Tensors:
+  C[M][N]
+  A[M][K]
+  B[K][N]
+  relu[M][N]
+  exp[M][N]
+Op: EXP(relu,)->exp, Compute Type: Vector
+Op: RELU(C,)->relu, Compute Type: Vector
+Op: GEMM1(A,B,)->C, Compute Type: Matrix
+UseFlattening: 0
+Shape:
+-----------Shape------------
+FactorizedDimensionIDToName:0:M,1:N,2:K,
+FactorizedDimensionNameToID:K:2,M:0,N:1,
+FlattenedDimensionIDToName:0:M,1:N,2:K,
+FlattenedDimensionNameToID:K:2,M:0,N:1,
+NumDataSpaces:5
+DataSpaceIDToName:0:C,1:A,2:B,3:relu,4:exp,
+DataSpaceNameToID:A:1,B:2,C:0,exp:4,relu:3,
+--------End Shape-----------
+------------End Workloads----------
+========Mapping Tree========
+Target Mem Level: MainMemory, Node type: Tile::Spatial, Loop Nest: M[0, 43(43), 1] K[0, 4(4), 1] N[0, 36(36), 1]
+Target Mem Level: L1, Node type: Tile::Temporal, Loop Nest: M[0, 1(1), 1] K[0, 2(1), 1] N[0, 1(1), 1]
+Target Mem Level: L0AB, Node type: Tile::Temporal, Loop Nest: M[0, 8(8), 1] K[0, 8(8), 1] N[0, 8(8), 1]
+Target Mem Level: Cube, Node type: Op::GEMM1, Loop Nest: M[0, 16(16), 1] K[0, 16(16), 1] N[0, 16(16), 1]
+Target Mem Level: L0C, Node type: Trans
+Target Mem Level: MainMemory, Node type: Trans
+======End Mapping Tree=======
+======== Evaluate ========
+Loop count of Op Op::GEMM1 success!
+Offset Init Finish!
+Tensor Init Finish!
+======== Root I/O Tensor ========
+Input Tensor: B
+Input Tensor: A
+Output Tensor: C
+======== End Root I/O Tensor ========
+**** Tensor Path ****
+Target Mem Level: MainMemory, Input Tensor: BA, Output Tensor: C
+Target Mem Level: L1, Input Tensor: BA, Output Tensor: 
+Target Mem Level: L0AB, Input Tensor: BA, Output Tensor: 
+Target Mem Level: Cube, Input Tensor: BA, Output Tensor: C
+Target Mem Level: L0C, Output Tensor: C
+Target Mem Level: MainMemory, Output Tensor: C
+**** End Tensor Path ****
+MainMemory: Input Tensor Data Movement: 0
+MainMemory: Output Tensor Data Movement: 0
+L1: Input Tensor Data Movement: 65536
+L1: Output Tensor Data Movement: 0
+L0AB: Input Tensor Data Movement: 32768
+L0AB: Output Tensor Data Movement: 0
+L0AB: Input Tensor Data Movement: 32768
+L0AB: Output Tensor Data Movement: 0
+L1: Input Tensor Data Movement: 32768
+L1: Output Tensor Data Movement: 0
+L0AB: Input Tensor Data Movement: 32768
+L0AB: Output Tensor Data Movement: 0
+L0AB: Input Tensor Data Movement: 32768
+L0AB: Output Tensor Data Movement: 0
+L1: Input Tensor Data Movement: 32768
+L1: Output Tensor Data Movement: 0
+L0AB: Input Tensor Data Movement: 32768
+L0AB: Output Tensor Data Movement: 0
+L0AB: Input Tensor Data Movement: 32768
+L0AB: Output Tensor Data Movement: 0
+L1: Input Tensor Data Movement: 32768
+L1: Output Tensor Data Movement: 0
+L0AB: Input Tensor Data Movement: 32768
+L0AB: Output Tensor Data Movement: 0
+L0AB: Input Tensor Data Movement: 32768
+L0AB: Output Tensor Data Movement: 0
+L1: Input Tensor Data Movement: 32768
+L1: Output Tensor Data Movement: 0
+L0AB: Input Tensor Data Movement: 32768
+L0AB: Output Tensor Data Movement: 0
+L0AB: Input Tensor Data Movement: 32768
+L0AB: Output Tensor Data Movement: 0
+L1: Input Tensor Data Movement: 32768
+L1: Output Tensor Data Movement: 0
+L0AB: Input Tensor Data Movement: 32768
+L0AB: Output Tensor Data Movement: 0
+L0AB: Input Tensor Data Movement: 32768
+L0AB: Output Tensor Data Movement: 0
+L1: Input Tensor Data Movement: 32768
+L1: Output Tensor Data Movement: 0
+L0AB: Input Tensor Data Movement: 32768
+L0AB: Output Tensor Data Movement: 0
+L0AB: Input Tensor Data Movement: 32768
+L0AB: Output Tensor Data Movement: 0

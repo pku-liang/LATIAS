@@ -7,7 +7,7 @@
 ## Build
 ### Clone
     git clone git@github.com:ChengruiZhang/TileExp.git
-    git switch LATIAS_V2
+    git switch LATIAS_FINAL
 
 ### Build timeloop
     cd 3rdparty/timeloop 
@@ -33,7 +33,7 @@ Vscode debug json file -- launch.json
         "program": "{$workspace}/build/TileExp",
         "args": ["*.yaml"],
         "stopAtEntry": false,
-        "cwd": "{$workspace}/tests/01-test-graph-huawei/",
+        "cwd": "{$workspace}/{$yaml_file_folder}/",
         "environment": [],
         "externalConsole": false,
         "MIMode": "gdb",

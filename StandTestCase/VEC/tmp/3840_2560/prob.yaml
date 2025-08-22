@@ -1,0 +1,29 @@
+problem:
+  io:
+    ins: A, B
+    outs: C
+  dimensions: [M, N]
+  instance:
+    M: 3840
+    N: 2560
+
+  ops:
+  - name: Add
+    dimensions: [M,N]
+    type: VECTOR
+    data-spaces:
+    - name: C
+      projection:
+        - [[M]]
+        - [[N]]
+      read-write: True
+    - name: A
+      projection:
+        - [[M]]
+        - [[N]]
+    - name: B
+      projection:
+        - [[M]]
+        - [[N]]
+    ins: A, B
+    out: C

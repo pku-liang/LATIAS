@@ -1,0 +1,65 @@
+problem:
+  io:
+    ins: A, B
+    outs: exp
+  dimensions: [M, N, K]
+  instance:
+    M: 4096
+    N: 256
+    K: 4096
+    # L: 512
+
+  ops:
+  - name: GEMM1
+    dimensions: [M,N,K]
+    type: MATRIX
+    data-spaces:
+    - name: C
+      projection:
+        - [[M]]
+        - [[N]]
+      read-write: True 
+    - name: A 
+      projection:
+        - [[M]]
+        - [[K]]
+    - name: B
+      projection:
+        - [[K]]
+        - [[N]]
+    ins: A, B
+    out: C
+   
+  - name: RELU 
+    dimensions: [M,N]
+    type: VECTOR
+    data-spaces:
+    - name: C
+      projection:
+        - [[M]]
+        - [[N]]
+    - name: relu 
+      projection: 
+        - [[M]]
+        - [[N]]
+      read-write: True 
+    ins: C
+    out: relu
+    inplace: True
+  
+  - name: EXP 
+    dimensions: [M,N]
+    type: VECTOR
+    data-spaces:
+    - name: relu
+      projection:
+        - [[M]]
+        - [[N]]
+    - name: exp 
+      projection: 
+        - [[M]]
+        - [[N]]
+      read-write: True 
+    ins: relu
+    out: exp
+    inplace: True

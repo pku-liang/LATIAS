@@ -1,0 +1,46 @@
+problem:
+  io:
+    ins: A, B
+    outs: exp
+  dimensions: [M, N]
+  instance:
+    M: 896
+    N: 2816
+
+  ops:
+  - name: SUB
+    dimensions: [M,N]
+    type: VECTOR
+    data-spaces:
+    - name: C
+      projection:
+        - [[M]]
+        - [[N]]
+      read-write: True
+    - name: A
+      projection:
+        - [[M]]
+        - [[N]]
+    - name: B
+      projection:
+        - [[M]]
+        - [[N]]
+    ins: A, B
+    out: C
+
+  - name: Exp
+    dimensions: [M,N]
+    type: VECTOR
+    data-spaces:
+    - name: C
+      projection:
+        - [[M]]
+        - [[N]]
+    - name: exp
+      projection:
+        - [[M]]
+        - [[N]]
+      read-write: True
+    ins: C
+    out: exp
+    inplace: True

@@ -1,0 +1,71 @@
+interconnection: 
+  version: 0.2 
+
+  connection:
+    - name: C1
+      source: MainMemory
+      target: L1
+      type: BC
+      bandwidth: 72
+    
+    - name: C2
+      source: L1
+      target: L0AB
+      type: HD
+      bandwidth: 100
+    
+    - name: C3
+      source: L0AB
+      target: Cube
+      type: HD
+      bandwidth: 1000
+    
+    - name: C4
+      source: Cube
+      target: L0C
+      type: HD
+      bandwidth: 1000
+
+    - name: C5
+      source: L0C
+      target: MainMemory
+      type: FD
+      bandwidth: 72
+
+    - name: C6
+      source: UB
+      target: Vector
+      type: FD
+      bandwidth: 1000
+    
+    - name: C7
+      source: UB
+      target: MainMemory
+      type: BC
+      bandwidth: 18
+
+    - name: C8
+      source: MainMemory
+      target: UB
+      type: BC
+      bandwidth: 18
+    
+    - name: C9
+      source: Vector
+      target: UB
+      type: FD
+      bandwidth: 1000
+
+    # - name: C10
+    #   source: Cube
+    #   target: Inner
+    #   type: Mesh
+    #   read_bandwidth: 2
+    #   bandwidth: 2
+
+    # - name: C11
+    #   source: Vector
+    #   target: Inner
+    #   type: Ring
+    #   read_bandwidth: 2
+    #   bandwidth: 2

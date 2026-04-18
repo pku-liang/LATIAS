@@ -13,6 +13,7 @@
     scons -j16 --d --static
 
 ## Run Test
+    cd tests
     bash test.sh
 
 ## Tutorial

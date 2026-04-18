@@ -5,10 +5,6 @@
 
 
 ## Build
-### Clone
-    git clone git@github.com:ChengruiZhang/TileExp.git
-    git switch LATIAS_FINAL
-
 ### Build timeloop
     cd 3rdparty/timeloop 
     scons -j16 --d --static 
@@ -20,29 +16,4 @@
     bash test.sh
 
 ## Tutorial
-    cd Tutorial
-
-## Vscode C++ debug mode
-
-Vscode debug json file -- launch.json
-
-    {
-        "name": "TileExp debug",
-        "type": "cppdbg",   
-        "request": "launch",
-        "program": "{$workspace}/build/TileExp",
-        "args": ["*.yaml"],
-        "stopAtEntry": false,
-        "cwd": "{$workspace}/{$yaml_file_folder}/",
-        "environment": [],
-        "externalConsole": false,
-        "MIMode": "gdb",
-        "setupCommands": [
-            {
-            "description": "Enable pretty-printing for gdb",
-            "text": "-enable-pretty-printing",
-            "ignoreFailures": true
-            }
-        ],
-        "miDebuggerPath": "/usr/bin/gdb"
-    },
+    Detailed tutorial will be released soon.
